@@ -836,6 +836,7 @@ def validar_certificado(codigo):
 @login_required
 @funcionario_required
 def pedido_materiais():
+
     if request.method == "POST":
         novo = {
             "id": len(pedidos_materiais) + 1,
@@ -846,37 +847,69 @@ def pedido_materiais():
             "data": date.today().strftime("%d/%m/%Y"),
             "status": "Pendente"
         }
+
         pedidos_materiais.append(novo)
         return redirect(url_for("pedido_materiais"))
 
     return render_template("pedido_materiais.html")
 
+
 @app.route("/admin/pedidos-materiais")
 @login_required
 @direcao_required
 def admin_pedidos_materiais():
-    return render_template("admin/pedidos_materiais.html", pedidos=pedidos_materiais)
+    return render_template(
+        "admin/pedidos_materiais.html",
+        pedidos=pedidos_materiais
+    )
 
+
+# ======================
+# APROVAR PEDIDO
+# ======================
 @app.route("/admin/pedido/<int:id>/aprovar")
 @login_required
 @direcao_required
 def aprovar_pedido(id):
+
     for p in pedidos_materiais:
         if p["id"] == id:
             p["status"] = "Aprovado"
             break
+
     return redirect(url_for("admin_pedidos_materiais"))
 
+
+# ======================
+# REJEITAR PEDIDO
+# ======================
 @app.route("/admin/pedido/<int:id>/rejeitar")
 @login_required
 @direcao_required
 def rejeitar_pedido(id):
+
     for p in pedidos_materiais:
         if p["id"] == id:
             p["status"] = "Rejeitado"
             break
+
     return redirect(url_for("admin_pedidos_materiais"))
 
+
+# ======================
+# EXCLUIR PEDIDO ✅
+# ======================
+@app.route("/admin/pedido/<int:id>/excluir")
+@login_required
+@direcao_required
+def excluir_pedido_material(id):
+
+    global pedidos_materiais
+    pedidos_materiais = [
+        p for p in pedidos_materiais if p["id"] != id
+    ]
+
+    return redirect(url_for("admin_pedidos_materiais"))
 # ==================================================
 # ENVIAR MENSAGEM (HTTP)
 # ==================================================

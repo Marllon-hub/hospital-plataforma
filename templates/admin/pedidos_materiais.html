@@ -31,32 +31,32 @@
     {% for p in pedidos %}
 
         <tr>
-            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.id }}</td>
-            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.funcionario }}</td>
-            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.setor }}</td>
-            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.material }}</td>
-            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.quantidade }}</td>
-            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.data }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p['id'] }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p['funcionario'] }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p['setor'] }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p['material'] }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p['quantidade'] }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p['data'] }}</td>
 
             <td style="padding:12px; border-bottom:1px solid #eee; font-weight:bold;
                 color:
-                {% if p.status == 'Aprovado' %}green
-                {% elif p.status == 'Rejeitado' %}red
+                {% if p['status'] == 'Aprovado' %}green
+                {% elif p['status'] == 'Rejeitado' %}red
                 {% else %}orange{% endif %};">
-                {{ p.status }}
+                {{ p['status'] }}
             </td>
 
-            <td style="padding:12px; border-bottom:1px solid #eee;">
+            <td style="padding:12px; border-bottom:1px solid #eee; white-space:nowrap;">
 
-                {% if p.status == "Pendente" %}
+                {% if p['status'] == "Pendente" %}
 
-                    <a href="/admin/pedido/{{ p.id }}/aprovar"
+                    <a href="/admin/pedido/{{ p['id'] }}/aprovar"
                        class="btn-outline"
                        style="background:#198754; color:white; border:none;">
                        ✔ Aprovar
                     </a>
 
-                    <a href="/admin/pedido/{{ p.id }}/rejeitar"
+                    <a href="/admin/pedido/{{ p['id'] }}/rejeitar"
                        class="btn-outline"
                        style="background:#dc3545; color:white; border:none;">
                        ✖ Rejeitar
@@ -65,6 +65,13 @@
                 {% else %}
                     —
                 {% endif %}
+
+                <a href="/admin/pedido/{{ p['id'] }}/excluir"
+                   class="btn-outline"
+                   onclick="return confirm('Deseja realmente excluir este pedido?')"
+                   style="background:#6c757d; color:white; border:none; margin-left:6px;">
+                   🗑 Excluir
+                </a>
 
             </td>
 
