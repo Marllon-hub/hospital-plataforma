@@ -1,0 +1,83 @@
+{% extends "base_admin.html" %}
+{% block title %}Painel da Direção{% endblock %}
+
+{% block content %}
+
+<h1>Painel da Direção</h1>
+
+<p style="margin-bottom:25px;">
+    Bem-vindo(a), <strong>{{ user.nome }}</strong>.
+</p>
+
+<!-- INDICADORES -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:30px;">
+
+    <div class="card" style="text-align:center;">
+        <h2>{{ total_funcionarios }}</h2>
+        <p>Funcionários</p>
+    </div>
+
+    <div class="card" style="text-align:center;">
+        <h2 style="color:#198754;">{{ ativos }}</h2>
+        <p>Ativos</p>
+    </div>
+
+    <div class="card" style="text-align:center;">
+        <h2 style="color:#dc3545;">{{ inativos }}</h2>
+        <p>Inativos</p>
+    </div>
+
+    <div class="card" style="text-align:center;">
+        <h2>{{ total_cursos }}</h2>
+        <p>Cursos</p>
+    </div>
+
+    <div class="card" style="text-align:center;">
+        <h2>{{ total_comunicados }}</h2>
+        <p>Comunicados</p>
+    </div>
+
+</div>
+
+<!-- MENU ADMINISTRATIVO -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px;">
+
+    <div class="card">
+        <h3>👥 Funcionários</h3>
+        <p>Gerencie cadastros, perfis e status.</p>
+        <a href="{{ url_for('admin_funcionarios') }}" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>📚 Cursos</h3>
+        <p>Cadastro e acompanhamento de treinamentos.</p>
+        <a href="{{ url_for('admin_cursos') }}" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>🏥 Setores</h3>
+        <p>Organização dos setores da unidade.</p>
+        <a href="{{ url_for('admin_setores') }}" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>📢 Comunicados</h3>
+        <p>Envio de avisos institucionais.</p>
+        <a href="{{ url_for('admin_comunicados') }}" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>📊 Relatórios</h3>
+        <p>Geração de relatórios administrativos.</p>
+        <a href="{{ url_for('admin_relatorios') }}" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>📜 Certificados</h3>
+        <p>Controle de certificados emitidos.</p>
+        <a href="{{ url_for('admin_certificados') }}" class="btn-outline">Acessar</a>
+    </div>
+
+</div>
+
+{% endblock %}

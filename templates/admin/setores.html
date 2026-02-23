@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Setores - Direção{% endblock %}
+
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
+    <div>
+        <h1 style="margin:0 0 6px 0;">Setores</h1>
+        <p style="margin:0; color:#6c757d;">Cadastre e visualize os setores da unidade.</p>
+    </div>
+</div>
+
+<!-- CADASTRO -->
+<div class="card" style="margin-top:20px;">
+    <h3 style="margin-top:0;">Cadastrar Novo Setor</h3>
+
+    <form method="post" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px;">
+
+        <input
+            type="text"
+            name="nome"
+            placeholder="Nome do setor"
+            required
+            style="max-width:380px; flex:1; min-width:240px;"
+        >
+
+        <button type="submit"
+                class="btn-outline"
+                style="background:#198754; color:white; border:none;">
+            ➕ Adicionar
+        </button>
+
+    </form>
+</div>
+
+<!-- LISTA -->
+<div class="card" style="margin-top:18px;">
+    <h3 style="margin-top:0;">Setores Cadastrados</h3>
+
+    {% if setores %}
+        <div style="overflow:auto; margin-top:12px;">
+            <table style="width:100%; border-collapse:collapse; background:white; border-radius:10px; overflow:hidden;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:12px; border-bottom:1px solid #eee; text-align:left; width:70px;">#</th>
+                        <th style="padding:12px; border-bottom:1px solid #eee; text-align:left;">Nome do Setor</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for s in setores %}
+                        <tr>
+                            <td style="padding:12px; border-bottom:1px solid #eee;">{{ loop.index }}</td>
+                            <td style="padding:12px; border-bottom:1px solid #eee;">{{ s }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="margin:10px 0 0 0; color:#6c757d;">Nenhum setor cadastrado.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Validação de Certificado{% endblock %}
+
+{% block content %}
+
+<h1>🔎 Validação de Certificado</h1>
+
+{% if valido %}
+
+<div class="card" style="border-left:6px solid green;">
+
+    <h3 style="color:green;">✅ Certificado Válido</h3>
+
+    <p><strong>Funcionário:</strong> {{ funcionario.nome }}</p>
+    <p><strong>Curso:</strong> {{ curso.titulo }}</p>
+    <p><strong>Data:</strong> {{ data }}</p>
+    <p><strong>Código:</strong> {{ codigo }}</p>
+
+</div>
+
+{% else %}
+
+<div class="card" style="border-left:6px solid red;">
+
+    <h3 style="color:red;">❌ Certificado Inválido</h3>
+
+    <p>{{ erro or "Este certificado não foi encontrado no sistema." }}</p>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

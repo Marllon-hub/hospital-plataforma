@@ -1,0 +1,436 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* LOGIN */
+.login-body {
+    background: #f4f6f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-box {
+    background: white;
+    padding: 30px;
+    width: 320px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.login-box h2 {
+    margin-bottom: 20px;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.login-box button {
+    margin-top: 15px;
+    padding: 10px;
+    width: 100%;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.error {
+    color: red;
+    margin-bottom: 10px;
+}
+
+/* DASHBOARD */
+.topbar {
+    background: #0d6efd;
+    color: white;
+    padding: 15px;
+}
+
+.content {
+    padding: 30px;
+}
+
+/* CHAT LAYOUT */
+
+.chat-layout {
+    display: flex;
+    height: 85vh;
+    background: #f0f2f5;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    width: 280px;
+    background: white;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+}
+
+.sidebar h3 {
+    padding: 15px;
+    margin: 0;
+    background: #075e54;
+    color: white;
+}
+
+/* CONTATO */
+
+.contato {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    text-decoration: none;
+    color: #333;
+    border-bottom: 1px solid #eee;
+}
+
+.contato:hover {
+    background: #f5f5f5;
+}
+
+/* AVATAR */
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    background: #25d366;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 40px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+/* INFO */
+
+.info strong {
+    display: block;
+}
+
+.info small {
+    color: #666;
+}
+
+/* DIREITA */
+
+.chat-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #777;
+}
+
+/* ====== LAYOUT BASE (TOPBAR + SIDEBAR) ====== */
+.topbar{
+    background:#0d6efd;
+    color:#fff;
+    padding:14px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.topbar-left .brand{
+    font-size:18px;
+    font-weight:700;
+}
+
+.topbar-left .subtitle{
+    font-size:12px;
+    opacity:.9;
+    margin-top:2px;
+}
+
+.topbar-right{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+.user-pill{
+    background:rgba(255,255,255,.15);
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:13px;
+}
+
+.btn-top{
+    background:#fff;
+    color:#0d6efd;
+    padding:7px 12px;
+    border-radius:8px;
+    text-decoration:none;
+    font-weight:700;
+}
+
+.app-shell{
+    display:flex;
+    min-height:calc(100vh - 56px);
+    background:#f4f6f8;
+}
+
+/* Sidebar */
+.sidebar-menu{
+    width:260px;
+    background:#fff;
+    border-right:1px solid #e6e6e6;
+    padding:14px;
+}
+
+.sidebar-title{
+    font-weight:700;
+    margin-bottom:10px;
+    color:#111;
+}
+
+.nav-item{
+    display:block;
+    padding:10px 10px;
+    border-radius:10px;
+    color:#222;
+    text-decoration:none;
+    margin-bottom:6px;
+}
+
+.nav-item:hover{
+    background:#f0f2f5;
+}
+
+.nav-divider{
+    height:1px;
+    background:#eee;
+    margin:10px 0;
+}
+
+/* Main */
+.main-content{
+    flex:1;
+    padding:22px;
+}
+
+/* Cards (dashboard) */
+.card{
+    background:#fff;
+    border:1px solid #e6e6e6;
+    border-radius:12px;
+    padding:16px;
+    box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+
+.btn-outline{
+    display:inline-block;
+    margin-top:10px;
+    padding:8px 12px;
+    border:1px solid #0d6efd;
+    color:#0d6efd;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:700;
+}
+
+.btn-outline:hover{
+    background:#0d6efd;
+    color:#fff;
+}
+
+/* Responsivo */
+@media (max-width: 900px){
+    .sidebar-menu{ display:none; }
+    .main-content{ padding:14px; }
+}
+
+/* ===== Sidebar mais bonita ===== */
+.sidebar-menu{
+    width:260px;
+    background:#fff;
+    border-right:1px solid #e8e8e8;
+    padding:14px 12px;
+}
+
+.sidebar-title{
+    font-weight:800;
+    margin:6px 8px 12px;
+    color:#111;
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    opacity:.8;
+}
+
+.nav-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:12px;
+    color:#222;
+    text-decoration:none;
+    margin:6px 6px;
+    font-weight:600;
+}
+
+.nav-item:hover{
+    background:#f4f6f8;
+}
+
+.nav-item.active{
+    background:rgba(13,110,253,.12);
+    color:#0d6efd;
+    border:1px solid rgba(13,110,253,.25);
+}
+
+.nav-divider{
+    height:1px;
+    background:#eee;
+    margin:12px 8px;
+}
+
+/* ===== Página / Cabeçalho ===== */
+.page-header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:14px;
+}
+
+.subtitle{
+    margin-top:6px;
+    color:#666;
+}
+
+/* ===== Stats (Indicadores) ===== */
+.stats-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap:16px;
+    margin:18px 0 26px;
+}
+
+.stat-card{
+    background:#fff;
+    border:1px solid #e8e8e8;
+    border-radius:14px;
+    padding:16px;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+
+.stat-number{
+    font-size:30px;
+    font-weight:900;
+    line-height:1;
+}
+
+.stat-label{
+    margin-top:6px;
+    color:#666;
+    font-weight:700;
+}
+
+.stat-number.green{ color:#198754; }
+.stat-number.red{ color:#dc3545; }
+
+/* ===== Título da seção ===== */
+.section-title{
+    margin:4px 0 14px;
+}
+
+.section-title h2{
+    margin:0;
+    font-size:16px;
+}
+
+.section-title p{
+    margin:4px 0 0;
+    color:#666;
+}
+
+/* ===== Grid de cards ===== */
+.cards-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap:16px;
+}
+
+/* ===== Card padrão (se ainda não tiver bom) ===== */
+.card{
+    background:#fff;
+    border:1px solid #e8e8e8;
+    border-radius:14px;
+    padding:16px;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+
+.card h3{
+    margin:0 0 8px;
+    font-size:16px;
+}
+
+.card p{
+    margin:0;
+    color:#555;
+    line-height:1.4;
+}
+
+/* ===== Botão outline melhor ===== */
+.btn-outline{
+    display:inline-block;
+    margin-top:12px;
+    padding:9px 14px;
+    border-radius:12px;
+    border:1px solid rgba(13,110,253,.35);
+    color:#0d6efd;
+    font-weight:800;
+    text-decoration:none;
+}
+
+.btn-outline:hover{
+    background:rgba(13,110,253,.08);
+}
+
+.page-header h1{
+    margin:0;
+    font-size:24px;
+}
+
+.page-header{
+    margin-bottom:10px;
+}
+
+.stat-card{
+    position:relative;
+    overflow:hidden;
+}
+
+.stat-card::after{
+    content:'';
+    position:absolute;
+    right:-20px;
+    bottom:-20px;
+    width:80px;
+    height:80px;
+    background:rgba(13,110,253,.05);
+    border-radius:50%;
+}
+
+.btn-outline{
+    transition:.2s ease;
+}
+
+.btn-outline:hover{
+    transform:translateY(-2px);
+}

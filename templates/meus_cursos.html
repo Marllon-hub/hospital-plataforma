@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Meus Cursos{% endblock %}
+
+{% block content %}
+
+<div style="max-width:1100px; margin:0 auto;">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:15px; flex-wrap:wrap;">
+    <div>
+      <h1 style="margin:0 0 6px 0;">📚 Meus Cursos</h1>
+      <p style="margin:0; color:#6c757d;">
+        Acompanhe seus cursos e conclua quando estiver pronto.
+      </p>
+    </div>
+
+    <a href="/dashboard" class="btn-outline">← Voltar</a>
+  </div>
+
+  {% if cursos and cursos|length > 0 %}
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:18px; margin-top:18px;">
+
+      {% for c in cursos %}
+      <div class="card">
+
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+          <h3 style="margin:0;">{{ c.titulo }}</h3>
+
+          {% if c.status == "Realizado" %}
+            <span style="padding:6px 10px; border-radius:999px; font-size:12px; background:#e9f7ef; color:#198754; font-weight:700;">
+              ✅ Realizado
+            </span>
+          {% else %}
+            <span style="padding:6px 10px; border-radius:999px; font-size:12px; background:#fff3cd; color:#856404; font-weight:700;">
+              ⏳ Pendente
+            </span>
+          {% endif %}
+        </div>
+
+        {% if c.descricao %}
+          <p style="margin:10px 0 12px 0; color:#495057;">
+            {{ c.descricao }}
+          </p>
+        {% endif %}
+
+        <p style="margin:0 0 12px 0; color:#6c757d; font-size:13px;">
+          Carga horária: <strong>{{ c.carga }}h</strong>
+          {% if c.data %} • Criado em {{ c.data }}{% endif %}
+        </p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          {% if c.video %}
+            <a class="btn-outline" href="{{ c.video }}" target="_blank">🎥 Vídeo</a>
+          {% endif %}
+
+          {% if c.pdf %}
+            <a class="btn-outline" href="/static/uploads/cursos/{{ c.pdf }}" target="_blank">📄 PDF</a>
+          {% endif %}
+
+          {% if c.status != "Realizado" %}
+            <a class="btn" href="/curso/{{ c.id }}/concluir">✅ Concluir</a>
+          {% else %}
+            <a class="btn-outline" href="/curso/{{ c.id }}/concluir">📄 Baixar Certificado</a>
+          {% endif %}
+        </div>
+
+      </div>
+      {% endfor %}
+
+    </div>
+
+  {% else %}
+
+    <div class="card" style="margin-top:18px;">
+      <p style="margin:0;">Nenhum curso disponível no momento.</p>
+    </div>
+
+  {% endif %}
+
+</div>
+
+{% endblock %}

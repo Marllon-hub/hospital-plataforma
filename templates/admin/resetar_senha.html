@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Resetar Senha{% endblock %}
+
+{% block content %}
+
+<h2>🔑 Resetar Senha</h2>
+
+<div class="card" style="max-width:600px;">
+
+<p>
+Funcionário:
+<strong>{{ funcionario.nome }}</strong>
+</p>
+
+<form method="POST">
+
+    <label>Nova Senha</label>
+
+    <input type="password"
+           name="senha"
+           required
+           minlength="4"
+           placeholder="Digite a nova senha">
+
+    <div style="margin-top:20px; display:flex; gap:10px;">
+
+        <button type="submit"
+                class="btn-outline"
+                style="background:#dc3545; color:white;">
+            🔄 Resetar Senha
+        </button>
+
+        <a href="/admin/funcionario/{{ funcionario.id }}"
+           class="btn-outline">
+           Cancelar
+        </a>
+
+    </div>
+
+</form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Relatórios{% endblock %}
+
+{% block content %}
+
+<h1>Relatórios Gerenciais</h1>
+<p style="color:#666; margin-top:-10px;">
+  Acesse relatórios, telas de consulta e exportações em PDF.
+</p>
+
+<style>
+  .grid-rel{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap:16px;
+    margin-top:18px;
+  }
+  .rel-card{
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:14px;
+    padding:16px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.04);
+  }
+  .rel-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:18px;
+    font-weight:800;
+    margin:0 0 6px 0;
+  }
+  .rel-desc{ color:#666; margin:0 0 14px 0; line-height:1.4; }
+  .rel-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  .btn-green{
+    background:#198754;
+    color:#fff;
+    padding:10px 14px;
+    border-radius:10px;
+    text-decoration:none;
+    display:inline-block;
+    font-weight:700;
+    border:0;
+  }
+  .btn-outline2{
+    background:#fff;
+    color:#0d6efd;
+    padding:10px 14px;
+    border-radius:10px;
+    text-decoration:none;
+    display:inline-block;
+    font-weight:700;
+    border:1px solid #cfe2ff;
+  }
+</style>
+
+<div class="grid-rel">
+
+  <div class="rel-card">
+    <div class="rel-title">📄 Relatório de Funcionários</div>
+    <p class="rel-desc">
+      Gere relatórios completos ou filtrados por nome, CPF, função ou e-mail.
+    </p>
+    <div class="rel-actions">
+      <a class="btn-green" href="{{ url_for('relatorio_funcionarios') }}">Abrir</a>
+      <a class="btn-outline2" href="{{ url_for('gerar_pdf_funcionarios') }}">PDF (padrão)</a>
+    </div>
+  </div>
+
+  <div class="rel-card">
+    <div class="rel-title">📅 Escalas</div>
+    <p class="rel-desc">
+      Acesse escalas geradas por mês e setor.
+    </p>
+    <div class="rel-actions">
+      <a class="btn-green" href="{{ url_for('admin_escalas') }}">Abrir</a>
+    </div>
+  </div>
+
+  <div class="rel-card">
+    <div class="rel-title">📦 Pedidos de Materiais</div>
+    <p class="rel-desc">
+      Consulte pedidos pendentes, aprovados e rejeitados.
+    </p>
+    <div class="rel-actions">
+      <a class="btn-green" href="{{ url_for('admin_pedidos_materiais') }}">Abrir</a>
+    </div>
+  </div>
+
+  <div class="rel-card">
+    <div class="rel-title">🎓 Certificados</div>
+    <p class="rel-desc">
+      Consulte certificados emitidos (por funcionário/data).
+    </p>
+    <div class="rel-actions">
+      <a class="btn-green" href="{{ url_for('admin_certificados') }}">Abrir</a>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

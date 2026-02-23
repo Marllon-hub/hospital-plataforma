@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Escalas{% endblock %}
+
+{% block content %}
+<h1>📅 Escalas (visualização)</h1>
+
+<div class="card" style="margin-bottom:16px;">
+  <form method="get" style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
+    <div>
+      <label>Ano</label><br>
+      <input type="number" name="ano" value="{{ filtros.ano or default_ano }}" style="width:120px;">
+    </div>
+
+    <div>
+      <label>Mês</label><br>
+      <input type="number" name="mes" min="1" max="12" value="{{ filtros.mes or '' }}" style="width:120px;">
+    </div>
+
+    <div>
+      <label>Setor</label><br>
+      <select name="setor" style="width:260px;">
+        <option value="">(Qualquer)</option>
+        <option value="__TODOS__" {% if filtros.setor == "__TODOS__" %}selected{% endif %}>Todos</option>
+        {% for s in setores %}
+          <option value="{{ s }}" {% if filtros.setor == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button class="btn" type="submit">🔎 Filtrar</button>
+  </form>
+
+  <p style="margin:10px 0 0 0; color:#666;">
+    Aqui você pode <b>visualizar</b> e <b>baixar PDF</b>. Apenas a Direção pode gerar/editar.
+  </p>
+</div>
+
+<div class="card">
+  <h3>Escalas criadas</h3>
+
+  {% if escalas %}
+    <table class="table">
+      <tr>
+        <th>Mês</th>
+        <th>Setor</th>
+        <th>Criado em</th>
+        <th>Ações</th>
+      </tr>
+      {% for e in escalas %}
+      <tr>
+        <td>{{ "%02d"|format(e.mes) }}/{{ e.ano }}</td>
+        <td>{{ e.setor or "Todos" }}</td>
+        <td>{{ e.criado_em.strftime("%d/%m/%Y %H:%M") if e.criado_em else "-" }}</td>
+        <td style="display:flex; gap:12px; align-items:center;">
+          <a href="{{ url_for('escala_mes_view', escala_mes_id=e.id) }}">👁️ Visualizar</a>
+          <a href="{{ url_for('escala_mes_pdf', escala_mes_id=e.id) }}">📄 PDF</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>Nenhuma escala encontrada.</p>
+  {% endif %}
+</div>
+{% endblock %}

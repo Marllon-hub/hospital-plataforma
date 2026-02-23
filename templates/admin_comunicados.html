@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Direção | Comunicados</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 30px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body>
+
+<h1>📢 Comunicados da Direção</h1>
+
+<form method="POST">
+    <label>Título</label>
+    <input type="text" name="titulo" required>
+
+    <label>Mensagem</label>
+    <textarea name="texto" rows="4" required></textarea>
+
+    <button type="submit">Publicar Comunicado</button>
+</form>
+
+<h2>Comunicados Publicados</h2>
+
+{% for c in comunicados %}
+    <div class="card">
+        <h3>{{ c.titulo }}</h3>
+        <p>{{ c.texto }}</p>
+    </div>
+{% else %}
+    <p>Nenhum comunicado publicado.</p>
+{% endfor %}
+
+</body>
+</html>

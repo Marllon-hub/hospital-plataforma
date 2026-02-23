@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Pedidos de Materiais</title>
+
+<style>
+
+body{
+    margin:0;
+    font-family:Arial;
+    background:#f4f6f8;
+}
+
+.container{
+    display:flex;
+    min-height:100vh;
+}
+
+.sidebar{
+    width:240px;
+    background:#0d6efd;
+    color:white;
+    padding:20px;
+}
+
+.sidebar a{
+    display:block;
+    color:white;
+    text-decoration:none;
+    padding:10px;
+    border-radius:5px;
+    margin-bottom:6px;
+}
+
+.sidebar a:hover{
+    background:rgba(255,255,255,0.2);
+}
+
+.content{
+    flex:1;
+    padding:30px;
+}
+
+.card{
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.1);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- MENU -->
+    <div class="sidebar">
+
+        <h2>Direção</h2>
+
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/funcionarios">Funcionários</a>
+        <a href="/admin/pedidos">Pedidos</a>
+        <a href="/admin/relatorios">Relatórios</a>
+        <a href="/logout">Sair</a>
+
+    </div>
+
+
+    <!-- CONTEÚDO -->
+    <div class="content">
+
+        <h1>📦 Pedidos de Materiais</h1>
+
+        <div class="card">
+
+            <p>
+                Aqui ficarão os pedidos feitos pelos setores.
+            </p>
+
+            <p>
+                (Em breve: aprovação, histórico e status)
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

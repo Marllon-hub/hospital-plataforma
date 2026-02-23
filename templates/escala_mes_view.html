@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Escala {{ "%02d"|format(escala.mes) }}/{{ escala.ano }}{% endblock %}
+
+{% block content %}
+<h1>📅 Escala {{ "%02d"|format(escala.mes) }}/{{ escala.ano }}</h1>
+<p style="color:#666;">Setor: <strong>{{ escala.setor or "Todos" }}</strong></p>
+
+<div class="card" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+  <a class="btn-outline" href="{{ url_for('escalas_view') }}">← Voltar</a>
+
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <div style="color:#666; font-size:14px;">
+      <strong>Total de funcionários:</strong> {{ por_func|length if por_func else 0 }}
+    </div>
+
+    <a class="btn-outline"
+       href="{{ url_for('escala_mes_pdf', escala_mes_id=escala.id) }}"
+       style="padding:8px 12px; border-radius:10px; text-decoration:none;">
+      📄 Baixar PDF
+    </a>
+  </div>
+</div>
+
+<style>
+  .cal-wrap{ overflow:auto; }
+  .cal-table{ border-collapse: collapse; min-width: 1200px; width: 100%; }
+  .cal-table th, .cal-table td{ border: 1px solid #e1e1e1; padding: 6px; font-size: 12px; text-align: center; white-space: nowrap; }
+  .cal-table th{ background:#f4f6f8; font-weight: 700; position: sticky; top: 0; z-index: 3; }
+  .sticky-col{ position: sticky; left: 0; z-index: 4; background: #fff; text-align: left !important; min-width: 260px; }
+  .sticky-col .nome{ font-weight: 700; display:block; }
+  .sticky-col .meta{ font-size: 12px; color:#666; display:block; margin-top:2px; }
+  .badge{ display:inline-block; padding: 3px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .b-plantao{ background:#0d6efd; color:#fff; }
+  .b-exp{ background:#198754; color:#fff; }
+  .b-folga{ background:#e9ecef; color:#333; }
+  .cell{ border-radius: 10px; padding: 7px 0; font-weight: 800; user-select:none; }
+  .tipo-PLANTAO_24H{ background:#0d6efd; color:#fff; }
+  .tipo-EXPEDIENTE{ background:#198754; color:#fff; }
+  .tipo-FOLGA{ background:#e9ecef; color:#333; }
+</style>
+
+{% if por_func %}
+
+  {# ordenar por nome #}
+  {% set lista_ordenada = [] %}
+  {% for func_id in por_func.keys() %}
+    {% set f = func_map.get(func_id) %}
+    {% if f %}
+      {% set _ = lista_ordenada.append((f.nome|lower, func_id)) %}
+    {% else %}
+      {% set _ = lista_ordenada.append(("zzz", func_id)) %}
+    {% endif %}
+  {% endfor %}
+  {% set lista_ordenada = lista_ordenada|sort %}
+
+  <div class="card cal-wrap">
+    <table class="cal-table">
+      <tr>
+        <th class="sticky-col">Funcionário</th>
+        {% for d in dias %}
+          <th>{{ "%02d"|format(d) }}</th>
+        {% endfor %}
+      </tr>
+
+      {% for _, func_id in lista_ordenada %}
+        {% set itens = por_func.get(func_id) %}
+        {% set f = func_map.get(func_id) %}
+
+        {% set c_plantao = namespace(v=0) %}
+        {% set c_expediente = namespace(v=0) %}
+        {% set c_folga = namespace(v=0) %}
+        {% for it in itens %}
+          {% if it.tipo == "PLANTAO_24H" %}
+            {% set c_plantao.v = c_plantao.v + 1 %}
+          {% elif it.tipo == "EXPEDIENTE" %}
+            {% set c_expediente.v = c_expediente.v + 1 %}
+          {% elif it.tipo == "FOLGA" %}
+            {% set c_folga.v = c_folga.v + 1 %}
+          {% endif %}
+        {% endfor %}
+
+        <tr>
+          <td class="sticky-col">
+            <span class="nome">👤 {{ f.nome if f else "Funcionário" }}</span>
+            <span class="meta">
+              {{ f.setor if f and f.setor else "-" }} |
+              {{ f.escala_tipo if f and f.escala_tipo else "-" }}
+              {% if f and f.plantao_base %} | Base: {{ f.plantao_base }}{% endif %}
+            </span>
+
+            <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+              <span class="badge b-plantao">24H: {{ c_plantao.v }}</span>
+              <span class="badge b-exp">EXP: {{ c_expediente.v }}</span>
+              <span class="badge b-folga">F: {{ c_folga.v }}</span>
+            </div>
+          </td>
+
+          {% for d in dias %}
+            {% set ns = namespace(status=None) %}
+            {% for it in itens %}
+              {% if it.inicio.strftime("%d")|int == d %}
+                {% set ns.status = it.tipo %}
+              {% endif %}
+            {% endfor %}
+
+            <td>
+              {% if ns.status == "PLANTAO_24H" %}
+                <div class="cell tipo-PLANTAO_24H">24H</div>
+              {% elif ns.status == "EXPEDIENTE" %}
+                <div class="cell tipo-EXPEDIENTE">EXP</div>
+              {% elif ns.status == "FOLGA" %}
+                <div class="cell tipo-FOLGA">F</div>
+              {% else %}
+                <div class="cell" style="background:transparent; color:#999; font-weight:600;">-</div>
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+{% else %}
+  <div class="card">
+    <p>Nenhum item encontrado para esse mês.</p>
+  </div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="chat-layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+        <h3>➕ Nova Conversa</h3>
+
+        {% for c in contatos %}
+
+        <a href="/chat/{{ c.id }}" class="contato">
+
+            <div class="avatar">
+                {{ c.nome[0] }}
+            </div>
+
+            <div class="info">
+                <strong>{{ c.nome }}</strong>
+                <small>{{ c.funcao }}</small>
+            </div>
+
+        </a>
+
+        {% endfor %}
+
+        {% if not contatos %}
+            <p style="padding:15px;color:#999">
+                Nenhum funcionário disponível
+            </p>
+        {% endif %}
+
+    </div>
+
+    <!-- DIREITA -->
+    <div class="chat-empty">
+
+        <h2>💬 Iniciar conversa</h2>
+        <p>Escolha alguém na lista</p>
+
+    </div>
+
+</div>
+
+{% endblock %}

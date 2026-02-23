@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Meus Certificados{% endblock %}
+
+{% block content %}
+
+<div style="max-width:1100px; margin:0 auto;">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:15px; flex-wrap:wrap;">
+    <div>
+      <h1 style="margin:0 0 6px 0;">📄 Meus Certificados</h1>
+      <p style="margin:0; color:#6c757d;">
+        Aqui ficam os certificados gerados após a conclusão dos cursos.
+      </p>
+    </div>
+
+    <a href="/dashboard" class="btn-outline">← Voltar</a>
+  </div>
+
+  {% if certificados and certificados|length > 0 %}
+
+    <div class="card" style="margin-top:18px; overflow:auto;">
+      <table class="table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Curso</th>
+            <th style="text-align:left;">Data</th>
+            <th style="text-align:left;">Ação</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for c in certificados %}
+          <tr>
+            <td style="padding:12px; border-top:1px solid #eee;">
+              {{ c.curso }}
+            </td>
+
+            <td style="padding:12px; border-top:1px solid #eee; color:#6c757d;">
+              {{ c.data }}
+            </td>
+
+            <td style="padding:12px; border-top:1px solid #eee;">
+              <a class="btn-outline" href="/curso/{{ c.id }}/concluir">
+                📥 Baixar PDF
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% else %}
+
+    <div class="card" style="margin-top:18px;">
+      <p style="margin:0;">Nenhum certificado disponível ainda.</p>
+    </div>
+
+  {% endif %}
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+
+/* CONTAINER */
+.chat-container{
+    display:flex;
+    height:85vh;
+    background:#f0f2f5;
+}
+
+/* SIDEBAR */
+.chat-sidebar{
+    width:300px;
+    background:#fff;
+    border-right:1px solid #ddd;
+    display:flex;
+    flex-direction:column;
+}
+
+.chat-search{
+    padding:10px;
+    border-bottom:1px solid #eee;
+}
+
+.chat-search input{
+    width:100%;
+    padding:8px;
+    border-radius:20px;
+    border:1px solid #ccc;
+}
+
+.chat-contacts{
+    flex:1;
+    overflow-y:auto;
+}
+
+.contact{
+    display:flex;
+    align-items:center;
+    padding:12px;
+    text-decoration:none;
+    color:#333;
+    border-bottom:1px solid #f1f1f1;
+}
+
+.contact:hover{
+    background:#f5f5f5;
+}
+
+.avatar{
+    width:40px;
+    height:40px;
+    background:#0d6efd;
+    color:#fff;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    margin-right:10px;
+}
+
+/* CHAT */
+.chat-main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+}
+
+/* HEADER */
+.chat-header{
+    background:#fff;
+    padding:12px;
+    border-bottom:1px solid #ddd;
+    font-weight:bold;
+    display:flex;
+    flex-direction:column;
+}
+
+#typing{
+    font-size:12px;
+    color:#25d366;
+    display:none;
+}
+
+/* MENSAGENS */
+.chat-messages{
+    flex:1;
+    padding:15px;
+    overflow-y:auto;
+    background:#efeae2;
+}
+
+.msg{
+    max-width:60%;
+    padding:8px 12px;
+    margin-bottom:8px;
+    border-radius:8px;
+    word-wrap:break-word;
+}
+
+.me{
+    background:#d9fdd3;
+    margin-left:auto;
+}
+
+.other{
+    background:#fff;
+}
+
+/* INPUT */
+.chat-input{
+    background:#fff;
+    padding:10px;
+    border-top:1px solid #ddd;
+    display:flex;
+    gap:8px;
+}
+
+.chat-input input{
+    flex:1;
+    padding:8px;
+    border-radius:20px;
+    border:1px solid #ccc;
+}
+
+.chat-input button{
+    border:none;
+    background:#0d6efd;
+    color:#fff;
+    border-radius:50%;
+    width:40px;
+    height:40px;
+    cursor:pointer;
+}
+
+</style>
+
+
+<div class="chat-container">
+
+<!-- SIDEBAR -->
+<div class="chat-sidebar">
+
+    <div class="chat-search">
+        <input type="text" id="search" placeholder="Buscar contato...">
+    </div>
+
+    <div class="chat-contacts" id="contactList">
+
+        {% for c in contatos %}
+
+        <a href="/chat/{{ c.id }}" class="contact">
+
+            <div class="avatar">
+                {{ c.nome[0] }}
+            </div>
+
+            <div>
+                <strong>{{ c.nome }}</strong><br>
+                <small>{{ c.funcao }}</small>
+            </div>
+
+        </a>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+<!-- CONVERSA -->
+<div class="chat-main">
+
+{% if outro %}
+
+<!-- HEADER -->
+<div class="chat-header">
+
+    <span>
+        {{ outro.nome }}
+
+        {% if outro.id in online %}
+            <small style="color:#25d366;"> ● online</small>
+        {% else %}
+            <small style="color:gray;"> ● offline</small>
+        {% endif %}
+    </span>
+
+    <div id="typing">digitando...</div>
+
+</div>
+
+
+<!-- MENSAGENS -->
+<div class="chat-messages" id="messages">
+
+{% for m in mensagens %}
+
+<div class="msg {% if m.remetente_id == user.id %}me{% else %}other{% endif %}">
+
+    {% if m.texto %}
+        {{ m.texto }}
+    {% endif %}
+
+    {% if m.arquivo %}
+        <br>
+        <a href="/static/uploads/chat/{{ m.arquivo }}" target="_blank">
+            📎 {{ m.arquivo }}
+        </a>
+    {% endif %}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+
+<!-- INPUT -->
+<form
+    class="chat-input"
+    method="POST"
+    action="/enviar-mensagem"
+    enctype="multipart/form-data"
+>
+
+    <input type="hidden" name="room" value="{{ sala }}">
+    <input type="hidden" name="destino" value="{{ outro.id }}">
+
+    <input type="text" name="texto" placeholder="Digite uma mensagem..." autocomplete="off">
+
+    <input type="file" name="arquivo" hidden id="file">
+
+    <label for="file" style="cursor:pointer;">📎</label>
+
+    <button type="submit">➤</button>
+
+</form>
+
+
+{% else %}
+
+<!-- TELA INICIAL -->
+<div style="margin:auto;text-align:center;color:#777">
+
+    <h2>💬 Chat</h2>
+    <p>Escolha um contato</p>
+
+</div>
+
+{% endif %}
+
+</div>
+
+</div>
+
+
+<!-- BUSCA -->
+<script>
+
+const search = document.getElementById("search");
+const list = document.getElementById("contactList");
+
+search.addEventListener("keyup", function(){
+
+    let termo = this.value.toLowerCase();
+
+    let contatos = list.querySelectorAll(".contact");
+
+    contatos.forEach(c => {
+
+        let nome = c.innerText.toLowerCase();
+
+        if(nome.includes(termo)){
+            c.style.display = "flex";
+        }else{
+            c.style.display = "none";
+        }
+
+    });
+
+});
+
+</script>
+
+
+<!-- SOCKET -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+
+const socket = io();
+
+/* ENTRAR NA SALA */
+socket.emit("join", {
+    room: "{{ sala }}"
+});
+
+
+/* RECEBER */
+socket.on("receive", function(data){
+
+    const box = document.getElementById("messages");
+
+    if(!box) return;
+
+    const div = document.createElement("div");
+
+    div.classList.add("msg");
+
+    if(data.from == "{{ user.id }}"){
+        div.classList.add("me");
+    }else{
+        div.classList.add("other");
+    }
+
+    let html = "";
+
+    if(data.text){
+        html += data.text;
+    }
+
+    if(data.file){
+        html += `<br><a href="/static/uploads/chat/${data.file}" target="_blank">📎 ${data.file}</a>`;
+    }
+
+    div.innerHTML = html;
+
+    box.appendChild(div);
+
+    box.scrollTop = box.scrollHeight;
+
+});
+
+
+/* DIGITANDO */
+const inputMsg = document.querySelector("input[name='texto']");
+
+let typingTimer;
+
+if(inputMsg){
+
+    inputMsg.addEventListener("input", function(){
+
+        socket.emit("typing", {
+            room: "{{ sala }}",
+            from: "{{ user.id }}"
+        });
+
+    });
+
+}
+
+
+socket.on("show_typing", function(data){
+
+    if(data.from != "{{ user.id }}"){
+
+        const t = document.getElementById("typing");
+
+        if(!t) return;
+
+        t.style.display = "block";
+
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(function(){
+
+            t.style.display = "none";
+
+        }, 1500);
+
+    }
+
+});
+
+
+/* ENVIAR */
+const form = document.querySelector(".chat-input");
+
+if(form){
+
+    form.addEventListener("submit", function(e){
+
+        e.preventDefault();
+
+        const input = form.querySelector("input[name='texto']");
+        const file = document.getElementById("file");
+
+        let texto = input.value;
+
+        if(texto.trim() === "" && !file.files.length){
+            return;
+        }
+
+        socket.emit("send_message", {
+
+            room: "{{ sala }}",
+            from: "{{ user.id }}",
+            to: "{{ outro.id }}",
+
+            text: texto
+
+        });
+
+
+        if(file.files.length){
+
+            const formData = new FormData(form);
+
+            fetch("/enviar-mensagem", {
+                method:"POST",
+                body:formData
+            });
+
+        }
+
+        input.value = "";
+        file.value = "";
+
+    });
+
+}
+
+</script>
+
+{% endblock %}

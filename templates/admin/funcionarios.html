@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Funcionários{% endblock %}
+
+{% block content %}
+
+<div style="max-width:1100px; margin:0 auto;">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+    <div>
+      <h1 style="margin:0 0 6px 0;">👥 Funcionários</h1>
+      <p style="margin:0; color:#6c757d;">
+        Buscar, visualizar, editar, resetar senha e excluir.
+      </p>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <!-- ✅ PDF (usa o mesmo "busca" da tela) -->
+      <a
+        href="{{ url_for('gerar_pdf_funcionarios', busca=(busca or '')) }}"
+        class="btn-outline"
+        style="background:#198754; color:#fff; border:0;"
+        title="Gerar relatório em PDF"
+      >
+        📄 Gerar PDF
+      </a>
+
+      <a href="/admin/funcionario/novo" class="btn">➕ Novo Funcionário</a>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;">
+    <form method="GET" action="/admin/funcionarios" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input
+        type="text"
+        name="busca"
+        value="{{ busca or '' }}"
+        placeholder="Buscar por nome, CPF, função ou e-mail"
+        style="flex:1; min-width:240px; padding:10px; border:1px solid #ddd; border-radius:8px;"
+      >
+      <button type="submit" class="btn">🔎 Buscar</button>
+      {% if busca %}
+        <a href="/admin/funcionarios" class="btn-outline">Limpar</a>
+      {% endif %}
+    </form>
+
+    <!-- ✅ atalho PDF também aqui embaixo (opcional) -->
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a
+        href="{{ url_for('gerar_pdf_funcionarios', busca=(busca or '')) }}"
+        class="btn-outline"
+        style="background:#198754; color:#fff; border:0;"
+      >
+        📄 Baixar PDF desta busca
+      </a>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px; overflow:auto;">
+    <table class="table" style="width:100%; border-collapse:collapse; min-width:900px;">
+      <thead>
+        <tr>
+          <th style="text-align:left;">Nome</th>
+          <th style="text-align:left;">CPF</th>
+          <th style="text-align:left;">Função</th>
+          <th style="text-align:left;">Email</th>
+          <th style="text-align:left;">Status</th>
+          <th style="text-align:left;">Ações</th>
+        </tr>
+      </thead>
+
+      <tbody>
+      {% for f in funcionarios %}
+        <tr>
+          <td style="padding:12px; border-top:1px solid #eee;">{{ f.nome }}</td>
+          <td style="padding:12px; border-top:1px solid #eee;">{{ f.cpf }}</td>
+          <td style="padding:12px; border-top:1px solid #eee;">{{ f.funcao }}</td>
+          <td style="padding:12px; border-top:1px solid #eee;">{{ f.email or '' }}</td>
+
+          <td style="padding:12px; border-top:1px solid #eee;">
+            {% if f.status == "Ativo" %}
+              <span style="color:#198754; font-weight:700;">Ativo</span>
+            {% else %}
+              <span style="color:#dc3545; font-weight:700;">Inativo</span>
+            {% endif %}
+          </td>
+
+          <td style="padding:12px; border-top:1px solid #eee;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a class="btn-outline" href="/admin/funcionario/{{ f.id }}">👁 Ver</a>
+              <a class="btn-outline" href="/admin/funcionario/{{ f.id }}/editar">✏️ Editar</a>
+              <a class="btn-outline" href="/admin/funcionario/{{ f.id }}/resetar-senha">🔑 Senha</a>
+
+              <form method="POST" action="/admin/funcionario/{{ f.id }}/excluir"
+                    style="display:inline;"
+                    onsubmit="return confirm('Tem certeza que deseja excluir este funcionário?');">
+                <button type="submit" class="btn" style="background:#dc3545;">🗑 Excluir</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="6" style="padding:14px; border-top:1px solid #eee;">
+            Nenhum funcionário encontrado.
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+{% endblock %}

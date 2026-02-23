@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Redefinir Senha{% endblock %}
+
+{% block content %}
+
+<h1>Redefinir Senha</h1>
+
+<p style="margin-bottom:25px;">
+    Para sua segurança, mantenha sua senha sempre atualizada.
+</p>
+
+<div class="card" style="max-width:500px; margin:auto;">
+
+    {% if erro %}
+        <div style="background:#f8d7da; color:#842029; padding:12px; border-radius:6px; margin-bottom:15px;">
+            {{ erro }}
+        </div>
+    {% endif %}
+
+    {% if sucesso %}
+        <div style="background:#d1e7dd; color:#0f5132; padding:12px; border-radius:6px; margin-bottom:15px;">
+            {{ sucesso }}
+        </div>
+    {% endif %}
+
+    <form method="POST">
+
+        <label>Senha Atual</label>
+        <input type="password" name="senha_atual" required>
+
+        <label style="margin-top:15px;">Nova Senha</label>
+        <input type="password" name="nova_senha" required>
+
+        <label style="margin-top:15px;">Confirmar Nova Senha</label>
+        <input type="password" name="confirmar" required>
+
+        <button class="btn" style="margin-top:20px; width:100%;">
+            Atualizar Senha
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

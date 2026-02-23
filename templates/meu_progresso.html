@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Meu Progresso{% endblock %}
+
+{% block content %}
+
+<h1>Meu Progresso</h1>
+
+<p style="margin-bottom:25px;">
+    Acompanhe sua evolução nos cursos e capacitações institucionais.
+</p>
+
+<div class="card" style="max-width:800px; margin:auto;">
+
+    <p><strong>Carga horária concluída:</strong> {{ carga_concluida }}h</p>
+    <p><strong>Carga horária total:</strong> {{ total_carga }}h</p>
+
+    <!-- Barra de progresso -->
+    <div style="background:#e9ecef; border-radius:20px; overflow:hidden; margin:20px 0;">
+        <div
+            style="
+                width: {{ progresso }}%;
+                background: #0d6efd;
+                color: white;
+                padding: 6px 0;
+                text-align: center;
+                font-weight: bold;
+                border-radius:20px;
+            "
+        >
+            {{ progresso }}%
+        </div>
+    </div>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <h3>Cursos Concluídos</h3>
+
+    <ul style="margin-top:15px; line-height:1.8;">
+        {% for c in cursos_concluidos %}
+            <li>
+                {{ c.titulo }} — <strong>{{ c.carga }}h</strong>
+            </li>
+        {% else %}
+            <li>Nenhum curso concluído até o momento.</li>
+        {% endfor %}
+    </ul>
+
+</div>
+
+{% endblock %}

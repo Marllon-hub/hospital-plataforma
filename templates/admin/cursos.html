@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Cursos - Direção{% endblock %}
+
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
+    <div>
+        <h1 style="margin:0 0 6px 0;">Cursos e Treinamentos</h1>
+        <p style="margin:0; color:#6c757d;">Gerencie os cursos cadastrados e seus materiais.</p>
+    </div>
+
+    <a href="/admin/cursos/novo"
+       class="btn-outline"
+       style="background:#198754; color:white; border:none;">
+       ➕ Novo Curso
+    </a>
+</div>
+
+<div style="margin-top:20px; display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:18px;">
+
+    {% if cursos %}
+        {% for c in cursos %}
+            <div class="card">
+                <h3 style="margin-bottom:6px;">{{ c.titulo }}</h3>
+
+                <p style="margin:0 0 10px 0; color:#6c757d;">
+                    <small>
+                        ⏱ Carga horária: <strong>{{ c.carga }}h</strong> • 📅 Criado em <strong>{{ c.data }}</strong>
+                    </small>
+                </p>
+
+                <p style="margin:0 0 12px 0;">{{ c.descricao }}</p>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                    {% if c.video %}
+                        <a class="btn-outline"
+                           href="{{ c.video }}"
+                           target="_blank"
+                           rel="noopener">
+                           🎥 Vídeo
+                        </a>
+                    {% endif %}
+
+                    {% if c.pdf %}
+                        <a class="btn-outline"
+                           href="/static/uploads/cursos/{{ c.pdf }}"
+                           target="_blank"
+                           rel="noopener">
+                           📄 Material PDF
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <p style="margin:0;">Nenhum curso cadastrado.</p>
+        </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

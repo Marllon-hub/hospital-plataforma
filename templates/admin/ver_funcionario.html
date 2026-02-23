@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Dados do Funcionário{% endblock %}
+
+{% block content %}
+
+<h2>Dados do Funcionário</h2>
+
+<div style="display:flex; gap:10px; margin: 15px 0 20px;">
+    <a href="/admin/funcionario/{{ funcionario.id }}/resetar-senha"
+       class="btn-outline"
+       style="border-color:#dc3545; color:#dc3545;">
+       🔑 Resetar Senha
+    </a>
+
+    <a href="/admin/funcionario/{{ funcionario.id }}/editar"
+       class="btn-outline">
+       ✏️ Editar
+    </a>
+
+    <a href="/admin/funcionarios" class="btn-outline">
+        ← Voltar
+    </a>
+</div>
+
+<div class="card">
+
+    <p><strong>Nome:</strong> {{ funcionario.nome }}</p>
+    <p><strong>CPF:</strong> {{ funcionario.cpf }}</p>
+    <p><strong>Função:</strong> {{ funcionario.funcao }}</p>
+    <p><strong>Status:</strong> {{ funcionario.status }}</p>
+
+    <hr style="margin:15px 0; border:none; border-top:1px solid #eee;">
+
+    <p><strong>Telefone:</strong> {{ funcionario.telefone }}</p>
+    <p><strong>Email:</strong> {{ funcionario.email }}</p>
+
+</div>
+
+{% endblock %}

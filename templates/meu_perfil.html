@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+
+<h1>Meu Perfil</h1>
+
+<div class="card">
+
+    <form>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+
+            <div>
+                <label>Nome Completo</label>
+                <input type="text" value="{{ user.nome }}" disabled>
+            </div>
+
+            <div>
+                <label>CPF</label>
+                <input type="text" value="{{ user.cpf }}" disabled>
+            </div>
+
+            <div>
+                <label>Função / Cargo</label>
+                <input type="text" value="{{ user.funcao }}" disabled>
+            </div>
+
+            <div>
+                <label>Status</label>
+                <input type="text" value="{{ user.status }}" disabled>
+            </div>
+
+            <div>
+                <label>Telefone</label>
+                <input type="text" value="{{ user.telefone }}" disabled>
+            </div>
+
+            <div>
+                <label>Email</label>
+                <input type="email" value="{{ user.email }}" disabled>
+            </div>
+
+            <div>
+                <label>Vínculo</label>
+                <input type="text" value="—" disabled>
+            </div>
+
+            <div>
+                <label>Matrícula</label>
+                <input type="text" value="—" disabled>
+            </div>
+
+            <div>
+                <label>Regime</label>
+                <input type="text" value="—" disabled>
+            </div>
+
+            <div>
+                <label>Setor</label>
+                <input type="text" value="—" disabled>
+            </div>
+
+            <div style="grid-column:1/3;">
+                <label>Endereço</label>
+                <input type="text" value="—" disabled>
+            </div>
+
+        </div>
+
+        <div style="margin-top:30px;">
+            <button class="btn" type="button" disabled>
+                Edição bloqueada (Somente RH / Direção)
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

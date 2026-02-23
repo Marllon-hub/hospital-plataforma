@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Pedidos de Materiais{% endblock %}
+
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
+    <div>
+        <h1 style="margin:0 0 6px 0;">📥 Pedidos Recebidos</h1>
+        <p style="margin:0; color:#6c757d;">Solicitações de materiais feitas pelos funcionários.</p>
+    </div>
+</div>
+
+<div class="card" style="margin-top:20px; overflow:auto;">
+
+<table style="width:100%; border-collapse:collapse;">
+
+    <thead>
+        <tr style="background:#f1f5f9;">
+            <th style="padding:12px;">ID</th>
+            <th style="padding:12px;">Funcionário</th>
+            <th style="padding:12px;">Setor</th>
+            <th style="padding:12px;">Material</th>
+            <th style="padding:12px;">Qtd</th>
+            <th style="padding:12px;">Data</th>
+            <th style="padding:12px;">Status</th>
+            <th style="padding:12px;">Ação</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for p in pedidos %}
+
+        <tr>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.id }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.funcionario }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.setor }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.material }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.quantidade }}</td>
+            <td style="padding:12px; border-bottom:1px solid #eee;">{{ p.data }}</td>
+
+            <td style="padding:12px; border-bottom:1px solid #eee; font-weight:bold;
+                color:
+                {% if p.status == 'Aprovado' %}green
+                {% elif p.status == 'Rejeitado' %}red
+                {% else %}orange{% endif %};">
+                {{ p.status }}
+            </td>
+
+            <td style="padding:12px; border-bottom:1px solid #eee;">
+
+                {% if p.status == "Pendente" %}
+
+                    <a href="/admin/pedido/{{ p.id }}/aprovar"
+                       class="btn-outline"
+                       style="background:#198754; color:white; border:none;">
+                       ✔ Aprovar
+                    </a>
+
+                    <a href="/admin/pedido/{{ p.id }}/rejeitar"
+                       class="btn-outline"
+                       style="background:#dc3545; color:white; border:none;">
+                       ✖ Rejeitar
+                    </a>
+
+                {% else %}
+                    —
+                {% endif %}
+
+            </td>
+
+        </tr>
+
+    {% else %}
+
+        <tr>
+            <td colspan="8" style="padding:15px; text-align:center; color:#6c757d;">
+                Nenhum pedido registrado.
+            </td>
+        </tr>
+
+    {% endfor %}
+    </tbody>
+
+</table>
+
+</div>
+
+{% endblock %}

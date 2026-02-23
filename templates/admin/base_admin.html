@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel da Direção</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="topbar">
+    <h2>Hospital • Painel da Direção</h2>
+</div>
+
+<div class="layout">
+    <aside class="sidebar">
+        <ul>
+            <li><a href="/admin">Dashboard Geral</a></li>
+            <li><a href="/admin/funcionarios">Funcionários</a></li>
+            <li><a href="/admin/escalas">Escalas</a></li>
+            <li><a href="/admin/cursos">Cursos</a></li>
+            <li><a href="/admin/comunicados">Comunicados</a></li>
+            <li><a href="/admin/setores">Setores</a></li>
+            <li><a href="/admin/relatorios">Relatórios</a></li>
+            <li><a href="/logout">Sair</a></li>
+        </ul>
+    </aside>
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+</body>
+</html>

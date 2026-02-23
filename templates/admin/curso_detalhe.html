@@ -1,0 +1,24 @@
+<h1>{{ curso.titulo }}</h1>
+
+<p>{{ curso.descricao }}</p>
+
+{% if curso.video %}
+<iframe width="560" height="315"
+src="{{ curso.video }}" frameborder="0" allowfullscreen></iframe>
+{% endif %}
+
+{% if curso.pdf %}
+<p><a href="/static/uploads/cursos/{{ curso.pdf }}" target="_blank">📄 Baixar PDF</a></p>
+{% endif %}
+
+<h2>Status dos Funcionários</h2>
+
+<ul>
+{% for f in funcionarios %}
+    {% if f.id in concluidos | map(attribute='user_id') %}
+        <li>{{ f.nome }} – ✅ Concluído</li>
+    {% else %}
+        <li>{{ f.nome }} – ❌ Pendente</li>
+    {% endif %}
+{% endfor %}
+</ul>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatórios - Direção</title>
+
+    <style>
+
+        body{
+            margin:0;
+            font-family:Arial, Helvetica, sans-serif;
+            background:#f4f6f8;
+        }
+
+        .container{
+            display:flex;
+            min-height:100vh;
+        }
+
+        .sidebar{
+            width:240px;
+            background:#0d6efd;
+            color:white;
+            padding:20px;
+        }
+
+        .sidebar h2{
+            text-align:center;
+            margin-bottom:25px;
+        }
+
+        .sidebar a{
+            display:block;
+            color:white;
+            text-decoration:none;
+            padding:10px;
+            border-radius:5px;
+            margin-bottom:6px;
+        }
+
+        .sidebar a:hover{
+            background:rgba(255,255,255,0.2);
+        }
+
+        .content{
+            flex:1;
+            padding:30px;
+        }
+
+        h1{
+            margin-bottom:25px;
+        }
+
+        .card{
+            background:white;
+            padding:25px;
+            border-radius:12px;
+            box-shadow:0 3px 8px rgba(0,0,0,0.1);
+            margin-bottom:20px;
+            max-width:600px;
+        }
+
+        .card h3{
+            margin-top:0;
+        }
+
+        .btn{
+            display:inline-block;
+            background:#198754;
+            color:white;
+            padding:10px 18px;
+            border-radius:6px;
+            text-decoration:none;
+            margin-top:12px;
+            font-size:14px;
+            transition:0.2s;
+        }
+
+        .btn:hover{
+            background:#157347;
+        }
+
+    </style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <!-- MENU -->
+    <div class="sidebar">
+
+        <h2>Direção</h2>
+
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/funcionarios">Funcionários</a>
+        <a href="/admin/cursos">Cursos</a>
+        <a href="/admin/comunicados">Comunicados</a>
+        <a href="/admin/setores">Setores</a>
+        <a href="/admin/relatorios">Relatórios</a>
+        <a href="/logout">Sair</a>
+
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div class="content">
+
+        <h1>Relatórios Gerenciais</h1>
+
+        <!-- CARD FUNCIONÁRIOS -->
+        <div class="card">
+
+            <h3>📄 Relatório de Funcionários</h3>
+
+            <p>
+                Permite gerar relatórios completos ou filtrados
+                por nome, CPF, função ou email.
+            </p>
+
+            <a href="/admin/funcionarios" class="btn">
+                Acessar Funcionários
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pedido de Materiais</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f4f6f8;
+    padding:40px;
+}
+
+.card{
+    max-width:500px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.1);
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-bottom:12px;
+    border:1px solid #ccc;
+    border-radius:5px;
+}
+
+button{
+    background:#0d6efd;
+    color:white;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#0b5ed7;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="card">
+
+<h2>📦 Pedido de Materiais</h2>
+
+<form method="post">
+
+    <input name="setor" placeholder="Setor" required>
+
+    <input name="material" placeholder="Material" required>
+
+    <input name="quantidade" placeholder="Quantidade" required>
+
+    <button type="submit">Enviar Pedido</button>
+
+</form>
+
+<br>
+
+<a href="/dashboard">⬅ Voltar</a>
+
+</div>
+
+</body>
+</html>

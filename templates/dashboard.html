@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Dashboard do Funcionário{% endblock %}
+
+{% block content %}
+
+<h1>Dashboard</h1>
+
+<p style="margin-bottom:25px;">
+    Bem-vindo(a), <strong>{{ user.nome }}</strong>.
+</p>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px;">
+
+    <!-- Meu Perfil -->
+    <div class="card">
+        <h3>👤 Meu Perfil</h3>
+        <p>Consulte seus dados cadastrais no sistema.</p>
+        <a href="/meu-perfil" class="btn-outline">Acessar</a>
+    </div>
+
+    <!-- Minha Escala -->
+    <div class="card">
+        <h3>📅 Minha Escala</h3>
+        <p>Visualize sua escala de trabalho atual.</p>
+        <a href="/minha-escala" class="btn-outline">Acessar</a>
+    </div>
+
+    <!-- Meus Cursos -->
+    <div class="card">
+        <h3>📚 Meus Cursos</h3>
+        <p>Acompanhe cursos obrigatórios e certificados.</p>
+        <a href="/meus-cursos" class="btn-outline">Acessar</a>
+    </div>
+
+    <!-- Comunicados -->
+    <div class="card">
+        <h3>📢 Comunicados</h3>
+        <p>Leia avisos e comunicados oficiais da unidade.</p>
+        <a href="/comunicados" class="btn-outline">Acessar</a>
+    </div>
+
+    <!-- Redefinir Senha -->
+    <div class="card">
+        <h3>🔑 Redefinir Senha</h3>
+        <p>Atualize sua senha de acesso ao sistema.</p>
+        <a href="/alterar-senha" class="btn-outline">Acessar</a>
+    </div>
+
+</div>
+
+{% endblock %}

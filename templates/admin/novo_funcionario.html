@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Novo Funcionário{% endblock %}
+
+{% block content %}
+
+<div style="max-width:900px; margin:0 auto;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
+        <div>
+            <h1 style="margin:0 0 6px 0;">➕ Novo Funcionário</h1>
+            <p style="margin:0; color:#6c757d;">
+                Preencha os dados para cadastrar um novo colaborador no sistema.
+            </p>
+        </div>
+
+        <a href="/admin/funcionarios" class="btn-outline">← Voltar</a>
+    </div>
+
+    {% if erro %}
+        <div class="card" style="margin-top:18px; border-left:4px solid #dc3545;">
+            <p style="margin:0; color:#dc3545; font-weight:bold;">{{ erro }}</p>
+        </div>
+    {% endif %}
+
+    <div class="card" style="margin-top:18px;">
+
+        <form method="post" style="display:grid; gap:14px;">
+
+            <!-- DADOS PESSOAIS -->
+            <h3 style="margin:0;">👤 Dados pessoais</h3>
+
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+                <div>
+                    <label>Nome completo</label>
+                    <input name="nome" placeholder="Nome completo" required>
+                </div>
+                <div>
+                    <label>CPF</label>
+                    <input name="cpf" placeholder="CPF" required>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+                <div>
+                    <label>Data de nascimento</label>
+                    <input name="nascimento" type="date" required>
+                </div>
+                <div>
+                    <label>Telefone</label>
+                    <input name="telefone" placeholder="Telefone">
+                </div>
+                <div>
+                    <label>E-mail</label>
+                    <input name="email" type="email" placeholder="E-mail">
+                </div>
+            </div>
+
+            <hr style="border:none; border-top:1px solid #eee; margin:8px 0;">
+
+            <!-- DADOS INTERNOS -->
+            <h3 style="margin:0;">🏥 Dados internos</h3>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+                <div>
+                    <label>Matrícula</label>
+                    <input name="matricula" placeholder="Matrícula">
+                </div>
+                <div>
+                    <label>Setor</label>
+                    <input name="setor" placeholder="Setor">
+                </div>
+                <div>
+                    <label>Cargo</label>
+                    <input name="cargo" placeholder="Cargo">
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+                <div>
+                    <label>Data de admissão</label>
+                    <input name="data_admissao" type="date">
+                </div>
+
+                <div>
+                    <label>Turno</label>
+                    <select name="turno" required>
+                        <option value="">Selecione</option>
+                        <option>Manhã</option>
+                        <option>Tarde</option>
+                        <option>Noite</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Tipo de vínculo</label>
+                    <select name="tipo_vinculo" required>
+                        <option value="">Selecione</option>
+                        <option>CLT</option>
+                        <option>Contrato</option>
+                        <option>Estágio</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div>
+                    <label>Carga horária</label>
+                    <input name="carga_horaria" placeholder="Ex: 40h" required>
+                </div>
+                <div>
+                    <label>Setor (opcional)</label>
+                    <input name="setor" placeholder="Setor">
+                </div>
+            </div>
+
+            <hr style="border:none; border-top:1px solid #eee; margin:8px 0;">
+
+            <!-- ACESSO AO SISTEMA -->
+            <h3 style="margin:0;">🔐 Acesso ao sistema</h3>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+                <div>
+                    <label>Perfil no sistema</label>
+                    <select name="funcao" required>
+                        <option value="">Selecione</option>
+                        <option>Funcionário</option>
+                        <option>Direção</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Status</label>
+                    <select name="status" required>
+                        <option value="">Selecione</option>
+                        <option>Ativo</option>
+                        <option>Inativo</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Senha inicial</label>
+                    <input name="senha" type="password" placeholder="Senha inicial" required>
+                </div>
+            </div>
+
+            <div>
+                <label>Observações internas</label>
+                <textarea name="observacoes" placeholder="Observações internas"
+                          style="width:100%; min-height:90px; resize:vertical;"></textarea>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+                <button type="submit" class="btn">💾 Cadastrar Funcionário</button>
+                <a href="/admin/funcionarios" class="btn-outline">Cancelar</a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

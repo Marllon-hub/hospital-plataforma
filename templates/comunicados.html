@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Comunicados{% endblock %}
+
+{% block content %}
+
+<div style="max-width:1100px; margin:0 auto;">
+
+  <h1 style="margin:0 0 6px 0;">📢 Comunicados</h1>
+  <p style="margin:0 0 14px 0; color:#6c757d;">Avisos e informações oficiais da unidade.</p>
+
+  <div class="card">
+    {% if comunicados %}
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        {% for c in comunicados %}
+          <div style="border:1px solid #eee; border-radius:12px; padding:14px;">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <div>
+                <div style="font-weight:800; font-size:16px;">{{ c.titulo }}</div>
+                <div style="color:#6c757d; font-size:12px;">{{ c.data }}</div>
+              </div>
+
+              {% if c.pdf %}
+                <a class="btn-outline" target="_blank"
+                   href="{{ url_for('static', filename='uploads/comunicados/' ~ c.pdf) }}">
+                  📄 Baixar PDF
+                </a>
+              {% endif %}
+            </div>
+
+            {% if c.conteudo_html %}
+              <div style="margin-top:10px; color:#333;">
+                {{ c.conteudo_html|safe }}
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color:#6c757d; margin:0;">Nenhum comunicado cadastrado.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

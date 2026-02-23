@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Importar Funcionários{% endblock %}
+
+{% block content %}
+<div style="max-width:900px; margin:0 auto;">
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;">
+    <div>
+      <h1 style="margin:0 0 6px 0;">📥 Importar Funcionários</h1>
+      <p style="margin:0; color:#6c757d;">
+        Envie um CSV para cadastrar funcionários automaticamente (CPF único).
+      </p>
+    </div>
+    <a class="btn-outline" href="/admin/funcionarios">← Voltar</a>
+  </div>
+
+  {% if erro %}
+    <div class="card" style="margin-top:16px; border-left:6px solid #dc3545;">
+      <b style="color:#dc3545;">Erro:</b> {{ erro }}
+    </div>
+  {% endif %}
+
+  {% if sucesso and resumo %}
+    <div class="card" style="margin-top:16px; border-left:6px solid #198754;">
+      <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+        <div><b style="color:#198754;">Importação concluída.</b></div>
+        <div style="color:#666;">Confira o resumo abaixo.</div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="card" style="margin-top:16px;">
+    <form method="POST" enctype="multipart/form-data" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input type="file" name="arquivo" accept=".csv"
+             style="flex:1; min-width:260px; padding:10px; border:1px solid #ddd; border-radius:10px; background:#fff;">
+      <button type="submit" class="btn">🚀 Importar CSV</button>
+    </form>
+
+    <div style="margin-top:10px; color:#6c757d; font-size:13px;">
+      <b>Dica:</b> o sistema tenta reconhecer colunas como: <i>NOME</i>, <i>CPF</i>, <i>CARGO</i>, <i>SETOR</i>, <i>TELEFONE</i>, <i>VÍNCULO</i>.
+      Se o CPF já existir, ele conta como <b>Duplicado</b> e não cadastra novamente.
+    </div>
+  </div>
+
+  {% if resumo %}
+    <div class="card" style="margin-top:14px;">
+      <h3 style="margin:0 0 12px 0;">📌 Resumo</h3>
+
+      <div style="display:flex; gap:14px; flex-wrap:wrap;">
+        <div class="card" style="padding:12px; min-width:180px;">
+          <div style="color:#6c757d; font-size:13px;">Adicionados</div>
+          <div style="font-size:22px; font-weight:800;">{{ resumo.adicionados }}</div>
+        </div>
+
+        <div class="card" style="padding:12px; min-width:180px;">
+          <div style="color:#6c757d; font-size:13px;">Duplicados (CPF já existia)</div>
+          <div style="font-size:22px; font-weight:800;">{{ resumo.duplicados }}</div>
+        </div>
+
+        <div class="card" style="padding:12px; min-width:180px;">
+          <div style="color:#6c757d; font-size:13px;">CPF inválido</div>
+          <div style="font-size:22px; font-weight:800;">{{ resumo.invalidos_cpf }}</div>
+        </div>
+
+        <div class="card" style="padding:12px; min-width:180px;">
+          <div style="color:#6c757d; font-size:13px;">Sem CPF</div>
+          <div style="font-size:22px; font-weight:800;">{{ resumo.sem_cpf }}</div>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <b>Colunas detectadas:</b>
+        <div style="color:#444; margin-top:6px;">
+          {{ resumo.colunas|join(", ") }}
+        </div>
+      </div>
+
+      {% if resumo.erros_exemplos %}
+        <div style="margin-top:14px;">
+          <b>Exemplos de linhas ignoradas:</b>
+          <ul style="margin:8px 0 0 18px; color:#444;">
+            {% for e in resumo.erros_exemplos %}
+              <li>{{ e }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Escalas{% endblock %}
+
+{% block content %}
+
+<h1>📅 Escalas</h1>
+
+<div class="card" style="margin-bottom:20px;">
+  <h3>Gerar escala do mês</h3>
+
+  <form method="post"
+        action="{{ url_for('admin_escalas_gerar') }}"
+        style="display:flex; gap:15px; flex-wrap:wrap; align-items:end;">
+
+    <div>
+      <label>Ano</label><br>
+      <input type="number"
+             name="ano"
+             value="{{ default_ano or 2026 }}"
+             required
+             style="width:120px;">
+    </div>
+
+    <div>
+      <label>Mês</label><br>
+      <input type="number"
+             name="mes"
+             min="1"
+             max="12"
+             value="{{ default_mes or '' }}"
+             required
+             style="width:120px;">
+    </div>
+
+    <div>
+      <label>Setor (opcional)</label><br>
+      <select name="setor" style="width:320px;">
+        <option value="">Todos</option>
+
+        <option value="ADM(ARQUIVO)">ADM(ARQUIVO)</option>
+        <option value="ADM(ULTRASSON)">ADM(ULTRASSON)</option>
+        <option value="ADM(CONTAS MÉDICAS)">ADM(CONTAS MÉDICAS)</option>
+        <option value="ADM(DIREÇÃO ADMINISTRATIVA)">ADM(DIREÇÃO ADMINISTRATIVA)</option>
+        <option value="ADM(DIREÇÃO MÉDICA)">ADM(DIREÇÃO MÉDICA)</option>
+        <option value="ADM(FARMÁCIA)">ADM(FARMÁCIA)</option>
+        <option value="ROUPÁRIA">ROUPÁRIA</option>
+        <option value="SERVIÇO SOCIAL">SERVIÇO SOCIAL</option>
+        <option value="PSICOLOGIA">PSICOLOGIA</option>
+        <option value="NUTRIÇÃO">NUTRIÇÃO</option>
+        <option value="COSTURA">COSTURA</option>
+        <option value="RECEPÇÃO">RECEPÇÃO</option>
+        <option value="ASG">ASG</option>
+        <option value="MAQUEIRO">MAQUEIRO</option>
+        <option value="DIRETORA MÉDICA">DIRETORA MÉDICA</option>
+        <option value="DIRETORA ADM">DIRETORA ADM</option>
+        <option value="MÉDICO(ANESTESISTA)">MÉDICO(ANESTESISTA)</option>
+        <option value="MÉDICO(GINECÓ)">MÉDICO(GINECÓ)</option>
+        <option value="MÉDICO(NEONATOLOGIA E SALA DE PARTO)">MÉDICO(NEONATOLOGIA E SALA DE PARTO)</option>
+        <option value="MÉDICO(OBSTETRÍCIA)">MÉDICO(OBSTETRÍCIA)</option>
+        <option value="MÉDICO(PEDIATRIA)">MÉDICO(PEDIATRIA)</option>
+        <option value="MÉDICO(USG)">MÉDICO(USG)</option>
+        <option value="MÉDICO(VISITADOR OBSTETRÍCIA)">MÉDICO(VISITADOR OBSTETRÍCIA)</option>
+        <option value="MÉDICO(NEP)">MÉDICO(NEP)</option>
+        <option value="MÉDICO(CIRURGIA PEDIÁTRICA)">MÉDICO(CIRURGIA PEDIÁTRICA)</option>
+      </select>
+    </div>
+
+    <div>
+      <button class="btn" type="submit">⚙️ Gerar</button>
+    </div>
+
+  </form>
+
+  <p style="color:#666; margin-top:12px;">
+    Regras: Plantonista 24x96 (baseado no <strong>plantao_base</strong>) e demais Seg–Sex (sáb/dom folga).
+  </p>
+</div>
+
+<div class="card">
+  <h3>Escalas já criadas</h3>
+
+  {% if escalas %}
+    <table class="table">
+      <tr>
+        <th>Mês</th>
+        <th>Setor</th>
+        <th>Criado em</th>
+        <th>Ação</th>
+      </tr>
+
+      {% for e in escalas %}
+      <tr>
+        <td>{{ "%02d"|format(e.mes) }}/{{ e.ano }}</td>
+        <td>{{ e.setor or "Todos" }}</td>
+        <td>{{ e.criado_em.strftime("%d/%m/%Y %H:%M") if e.criado_em else "-" }}</td>
+
+        <td style="display:flex; gap:10px; align-items:center;">
+          <a href="{{ url_for('admin_escala_mes', escala_mes_id=e.id) }}">
+            🔎 Abrir
+          </a>
+
+          <form method="post"
+                action="{{ url_for('admin_excluir_escala', escala_mes_id=e.id) }}"
+                onsubmit="return confirm('Deseja excluir a escala {{ '%02d'|format(e.mes) }}/{{ e.ano }}?');"
+                style="margin:0;">
+            <button type="submit"
+                    style="background:#d9534f;
+                           color:white;
+                           border:0;
+                           padding:6px 10px;
+                           border-radius:6px;
+                           cursor:pointer;">
+              🗑 Excluir
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>Nenhuma escala criada ainda.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Painel da Direção{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Painel da Direção</h1>
+        <p class="subtitle">
+            Bem-vindo(a), <strong>{{ user.nome }}</strong>.
+        </p>
+    </div>
+</div>
+
+<!-- INDICADORES -->
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <div class="stat-number">{{ total_funcionarios }}</div>
+        <div class="stat-label">Funcionários</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number green">{{ ativos }}</div>
+        <div class="stat-label">Ativos</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number red">{{ inativos }}</div>
+        <div class="stat-label">Inativos</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">{{ total_cursos }}</div>
+        <div class="stat-label">Cursos</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">{{ total_comunicados }}</div>
+        <div class="stat-label">Comunicados</div>
+    </div>
+
+</div>
+
+<div class="section-title">
+    <h2>Atalhos</h2>
+    <p>Acesso rápido às áreas administrativas.</p>
+</div>
+
+<!-- MENU ADMINISTRATIVO -->
+<div class="cards-grid">
+
+    <div class="card">
+        <h3>👥 Funcionários</h3>
+        <p>Gerencie cadastros, perfis e status.</p>
+        <a href="/admin/funcionarios" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>📚 Cursos</h3>
+        <p>Cadastro e acompanhamento de treinamentos.</p>
+        <a href="/admin/cursos" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>🏥 Setores</h3>
+        <p>Organização dos setores da unidade.</p>
+        <a href="/admin/setores" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>📢 Comunicados</h3>
+        <p>Envio de avisos institucionais.</p>
+        <a href="/admin/comunicados" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>📊 Relatórios</h3>
+        <p>Geração de relatórios administrativos.</p>
+        <a href="/admin/relatorios" class="btn-outline">Acessar</a>
+    </div>
+
+    <div class="card">
+        <h3>📜 Certificados</h3>
+        <p>Controle de certificados emitidos.</p>
+        <a href="/admin/certificados" class="btn-outline">Acessar</a>
+    </div>
+
+</div>
+
+{% endblock %}
