@@ -5,8 +5,13 @@ from functools import wraps
 from datetime import date, datetime, timedelta, time
 import io
 import os
-import qrcode
 import calendar
+
+# ✅ QRCode: protege o app caso o pacote não esteja instalado (evita crash/502)
+try:
+    import qrcode
+except Exception:
+    qrcode = None
 
 from models import db, Funcionario, Mensagem, EscalaMes, EscalaItem  # <-- garanta que existem no models.py
 
@@ -30,22 +35,34 @@ app = Flask(__name__)
 # ✅ Produção: segredo via variável de ambiente (fallback para dev/local)
 app.secret_key = os.getenv("SECRET_KEY", "hospital2026_dev_troque_em_producao")
 
-# ✅ Banco: preferir instance/hospital.db (fallback para o antigo)
+# ✅ Garantir pasta instance no Railway (evita 502 por falta de caminho do sqlite)
 os.makedirs(app.instance_path, exist_ok=True)
 default_db_path = os.path.join(app.instance_path, "hospital.db")
-db_path = os.getenv("SQLITE_PATH", default_db_path)
 
-# aceita também quem ainda usa sqlite:///hospital.db
-if db_path.startswith("sqlite:"):
-    app.config["SQLALCHEMY_DATABASE_URI"] = db_path
-else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+# ✅ Banco: prioridade:
+# 1) DATABASE_URL (se existir)
+# 2) SQLITE_PATH (se existir)
+# 3) instance/hospital.db
+db_uri = os.getenv("DATABASE_URL")
+if not db_uri:
+    db_path = os.getenv("SQLITE_PATH", default_db_path)
+    if str(db_path).startswith("sqlite:"):
+        db_uri = db_path
+    else:
+        db_uri = f"sqlite:///{db_path}"
 
+app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ✅ SocketIO: em produção, setar SOCKETIO_CORS com seu domínio (ex: https://plataforma.seudominio.com.br)
+# ✅ SocketIO: THREADING (mais estável no Railway; websockets podem cair para long-polling)
 socketio_cors = os.getenv("SOCKETIO_CORS", "*")
-socketio = SocketIO(app, cors_allowed_origins=socketio_cors, async_mode="threading")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=socketio_cors,
+    async_mode="threading",
+    ping_interval=25,
+    ping_timeout=60,
+)
 
 db.init_app(app)
 
@@ -57,10 +74,12 @@ db.init_app(app)
 def set_sqlite_pragma(dbapi_connection, connection_record):
     if isinstance(dbapi_connection, sqlite3.Connection):
         cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL;")
-        cursor.execute("PRAGMA synchronous=NORMAL;")
-        cursor.execute("PRAGMA busy_timeout=5000;")
-        cursor.close()
+        try:
+            cursor.execute("PRAGMA journal_mode=WAL;")
+            cursor.execute("PRAGMA synchronous=NORMAL;")
+            cursor.execute("PRAGMA busy_timeout=30000;")
+        finally:
+            cursor.close()
 
 # ==================================================
 # PATHS / UPLOADS
@@ -119,6 +138,7 @@ pedidos_materiais = []
 with app.app_context():
     db.create_all()
 
+    # ✅ cria usuários padrão somente se ainda não existirem
     if not Funcionario.query.filter_by(cpf="12345678900").first():
         db.session.add(Funcionario(
             nome="Diretor Teste",
@@ -183,7 +203,10 @@ def limpar_mensagens_vencidas():
         if m.arquivo:
             path = os.path.join(UPLOAD_CHAT, m.arquivo)
             if os.path.exists(path):
-                os.remove(path)
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
         db.session.delete(m)
 
     db.session.commit()
@@ -246,7 +269,7 @@ def meu_perfil():
     return render_template("meu_perfil.html")
 
 # ==================================================
-# ESCALA (ANTIGA - PDF) - (pode manter, mesmo que tenha tirado do menu)
+# ESCALA (ANTIGA - PDF)
 # ==================================================
 
 @app.route("/minha-escala")
@@ -285,11 +308,9 @@ def meus_cursos():
 
     for curso in cursos_lista:
         status = "Pendente"
-
         for c in conclusoes:
             if c["user_id"] == session["user_id"] and c["curso_id"] == curso["id"]:
                 status = "Realizado"
-
         lista.append({**curso, "status": status})
 
     return render_template("meus_cursos.html", cursos=lista)
@@ -450,14 +471,14 @@ def admin_cursos():
 @direcao_required
 def admin_novo_curso():
     if request.method == "POST":
-        pdf = request.files.get("pdf")
+        pdf_file = request.files.get("pdf")
         nome = None
 
-        if pdf:
+        if pdf_file:
             cursos_dir = os.path.join(BASE_DIR, "static", "uploads", "cursos")
             os.makedirs(cursos_dir, exist_ok=True)
-            nome = secure_filename(pdf.filename)
-            pdf.save(os.path.join(cursos_dir, nome))
+            nome = secure_filename(pdf_file.filename)
+            pdf_file.save(os.path.join(cursos_dir, nome))
 
         cursos_lista.append({
             "id": len(cursos_lista) + 1,
@@ -657,7 +678,6 @@ def admin_novo_funcionario():
 
                 observacoes=request.form.get("observacoes"),
 
-                # ========= ESCALA (NOVO) =========
                 escala_tipo=request.form.get("escala_tipo", "SEG_SEX"),
                 plantao_base=request.form.get("plantao_base") or None
             )
@@ -692,7 +712,6 @@ def admin_certificados():
 
     return render_template("admin/certificados.html", certificados=lista)
 
-# ✅ ADMIN COMUNICADOS (GET + POST) — texto com edição (HTML) + upload PDF
 @app.route("/admin/comunicados", methods=["GET", "POST"])
 @login_required
 @direcao_required
@@ -704,8 +723,8 @@ def admin_comunicados():
         titulo = (request.form.get("titulo") or "").strip()
         conteudo_html = (request.form.get("conteudo_html") or "").strip()
 
-        pdf = request.files.get("pdf")
-        pdf_nome = _save_pdf_comunicado(pdf) if pdf else None
+        pdf_file = request.files.get("pdf")
+        pdf_nome = _save_pdf_comunicado(pdf_file) if pdf_file else None
 
         if not titulo:
             erro = "Informe o título do comunicado."
@@ -766,16 +785,19 @@ def gerar_certificado_pdf(funcionario, curso):
 
     codigo = f"{funcionario.id}-{curso['id']}-{data_str}"
 
-    # ✅ URL correta em produção
     base_url = os.getenv("BASE_URL", "http://localhost:5000").rstrip("/")
     url = f"{base_url}/validar-certificado/{codigo}"
 
-    qr = qrcode.make(url)
-    qr_io = io.BytesIO()
-    qr.save(qr_io)
-    qr_io.seek(0)
-
-    pdf.drawImage(ImageReader(qr_io), w - 150, 120, 100, 100)
+    # ✅ Se qrcode não estiver disponível no servidor, não derruba o app
+    if qrcode is not None:
+        qr = qrcode.make(url)
+        qr_io = io.BytesIO()
+        qr.save(qr_io)
+        qr_io.seek(0)
+        pdf.drawImage(ImageReader(qr_io), w - 150, 120, 100, 100)
+    else:
+        pdf.setFont("Helvetica", 9)
+        pdf.drawString(2 * cm, 120, f"Validação: {url}")
 
     pdf.line(w / 2 - 120, 200, w / 2 + 120, 200)
     pdf.drawCentredString(w / 2, 180, "Direção Administrativa")
@@ -836,7 +858,6 @@ def validar_certificado(codigo):
 @login_required
 @funcionario_required
 def pedido_materiais():
-
     if request.method == "POST":
         novo = {
             "id": len(pedidos_materiais) + 1,
@@ -853,63 +874,40 @@ def pedido_materiais():
 
     return render_template("pedido_materiais.html")
 
-
 @app.route("/admin/pedidos-materiais")
 @login_required
 @direcao_required
 def admin_pedidos_materiais():
-    return render_template(
-        "admin/pedidos_materiais.html",
-        pedidos=pedidos_materiais
-    )
+    return render_template("admin/pedidos_materiais.html", pedidos=pedidos_materiais)
 
-
-# ======================
-# APROVAR PEDIDO
-# ======================
 @app.route("/admin/pedido/<int:id>/aprovar")
 @login_required
 @direcao_required
 def aprovar_pedido(id):
-
     for p in pedidos_materiais:
         if p["id"] == id:
             p["status"] = "Aprovado"
             break
-
     return redirect(url_for("admin_pedidos_materiais"))
 
-
-# ======================
-# REJEITAR PEDIDO
-# ======================
 @app.route("/admin/pedido/<int:id>/rejeitar")
 @login_required
 @direcao_required
 def rejeitar_pedido(id):
-
     for p in pedidos_materiais:
         if p["id"] == id:
             p["status"] = "Rejeitado"
             break
-
     return redirect(url_for("admin_pedidos_materiais"))
 
-
-# ======================
-# EXCLUIR PEDIDO ✅
-# ======================
 @app.route("/admin/pedido/<int:id>/excluir")
 @login_required
 @direcao_required
 def excluir_pedido_material(id):
-
     global pedidos_materiais
-    pedidos_materiais = [
-        p for p in pedidos_materiais if p["id"] != id
-    ]
-
+    pedidos_materiais = [p for p in pedidos_materiais if p["id"] != id]
     return redirect(url_for("admin_pedidos_materiais"))
+
 # ==================================================
 # ENVIAR MENSAGEM (HTTP)
 # ==================================================
@@ -928,7 +926,6 @@ def enviar_mensagem():
         os.makedirs(UPLOAD_CHAT, exist_ok=True)
         nome_arquivo = secure_filename(arquivo.filename)
 
-        # ✅ evita sobrescrever arquivo com mesmo nome
         base, ext = os.path.splitext(nome_arquivo)
         nome_final = f"{base}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{ext}"
         arquivo.save(os.path.join(UPLOAD_CHAT, nome_final))
@@ -1036,10 +1033,7 @@ def conversas():
         else:
             contatos_ids.add(m.remetente_id)
 
-    contatos = Funcionario.query.filter(
-        Funcionario.id.in_(contatos_ids)
-    ).all()
-
+    contatos = Funcionario.query.filter(Funcionario.id.in_(contatos_ids)).all()
     return render_template("conversas.html", contatos=contatos)
 
 # ==================================================
@@ -1050,11 +1044,7 @@ def conversas():
 @login_required
 def contatos_chat():
     user_id = session["user_id"]
-
-    contatos = Funcionario.query.filter(
-        Funcionario.id != user_id
-    ).order_by(Funcionario.nome).all()
-
+    contatos = Funcionario.query.filter(Funcionario.id != user_id).order_by(Funcionario.nome).all()
     return render_template("contatos_chat.html", contatos=contatos)
 
 # ==================================================
@@ -1069,9 +1059,7 @@ def chat(destino_id=None):
 
     user = Funcionario.query.get(session["user_id"])
 
-    contatos = Funcionario.query.filter(
-        Funcionario.id != user.id
-    ).order_by(Funcionario.nome).all()
+    contatos = Funcionario.query.filter(Funcionario.id != user.id).order_by(Funcionario.nome).all()
 
     mensagens = []
     outro = None
@@ -1087,13 +1075,7 @@ def chat(destino_id=None):
 
         sala = f"{min(user.id, destino_id)}_{max(user.id, destino_id)}"
 
-    return render_template(
-        "chat.html",
-        contatos=contatos,
-        mensagens=mensagens,
-        outro=outro,
-        sala=sala
-    )
+    return render_template("chat.html", contatos=contatos, mensagens=mensagens, outro=outro, sala=sala)
 
 # ==================================================
 # ACESSO NEGADO
@@ -1104,7 +1086,7 @@ def acesso_negado():
     return render_template("acesso_negado.html")
 
 # ==================================================
-# HELPERS - ESCALA (CORRIGIDOS + FALLBACKS)
+# HELPERS - ESCALA
 # ==================================================
 
 def parse_date_yyyy_mm_dd(s: str):
@@ -1134,7 +1116,6 @@ def generate_items_for_funcionario(func: Funcionario, escala_mes: EscalaMes, ano
 
     escala_tipo = (func.escala_tipo or "SEG_SEX").strip().upper()
 
-    # ✅ fallback para imports antigos
     if escala_tipo in ("DIURNO", "DIARIO"):
         escala_tipo = "SEG_SEX"
 
@@ -1171,7 +1152,6 @@ def generate_items_for_funcionario(func: Funcionario, escala_mes: EscalaMes, ano
         d = inicio_mes
         while d <= fim_mes:
             delta_days = (d - base).days
-
             if delta_days >= 0 and (delta_days % 5 == 0):
                 ini = datetime.combine(d, start_hour)
                 fim = ini + timedelta(hours=24)
@@ -1204,13 +1184,7 @@ def generate_items_for_funcionario(func: Funcionario, escala_mes: EscalaMes, ano
 def admin_escalas():
     escalas = EscalaMes.query.order_by(EscalaMes.ano.desc(), EscalaMes.mes.desc()).all()
     hoje = datetime.now()
-
-    return render_template(
-        "admin/escalas.html",
-        escalas=escalas,
-        default_ano=hoje.year,
-        default_mes=hoje.month
-    )
+    return render_template("admin/escalas.html", escalas=escalas, default_ano=hoje.year, default_mes=hoje.month)
 
 @app.route("/admin/escalas/gerar", methods=["POST"])
 @login_required
@@ -1224,12 +1198,7 @@ def admin_escalas_gerar():
 
     escala_mes = EscalaMes.query.filter_by(ano=ano, mes=mes, setor=setor).first()
     if not escala_mes:
-        escala_mes = EscalaMes(
-            ano=ano,
-            mes=mes,
-            setor=setor,
-            criado_por_id=session.get("user_id")
-        )
+        escala_mes = EscalaMes(ano=ano, mes=mes, setor=setor, criado_por_id=session.get("user_id"))
         db.session.add(escala_mes)
         db.session.commit()
 
@@ -1276,432 +1245,7 @@ def admin_escala_mes(escala_mes_id):
     dias_no_mes = calendar.monthrange(escala.ano, escala.mes)[1]
     dias = list(range(1, dias_no_mes + 1))
 
-    return render_template(
-        "admin/escala_mes.html",
-        escala=escala,
-        por_func=por_func,
-        func_map=func_map,
-        dias=dias
-    )
-
-# ==================================================
-# FUNCIONÁRIO - ESCALAS (VISUALIZAÇÃO / PDF)
-# ==================================================
-
-@app.route("/escalas")
-@login_required
-@funcionario_required
-def escalas_view():
-    hoje = datetime.now()
-    ano = request.args.get("ano", "").strip()
-    mes = request.args.get("mes", "").strip()
-    setor = request.args.get("setor", "").strip()
-
-    query = EscalaMes.query
-
-    if ano.isdigit():
-        query = query.filter(EscalaMes.ano == int(ano))
-    if mes.isdigit():
-        query = query.filter(EscalaMes.mes == int(mes))
-    if setor:
-        if setor == "__TODOS__":
-            query = query.filter(EscalaMes.setor.is_(None))
-        else:
-            query = query.filter(EscalaMes.setor == setor)
-
-    escalas = query.order_by(EscalaMes.ano.desc(), EscalaMes.mes.desc(), EscalaMes.setor.asc()).all()
-
-    setores_db = [
-        s[0] for s in db.session.query(EscalaMes.setor)
-        .distinct()
-        .order_by(EscalaMes.setor.asc())
-        .all()
-        if s[0]
-    ]
-
-    return render_template(
-        "escalas_view.html",
-        escalas=escalas,
-        setores=setores_db,
-        default_ano=hoje.year,
-        default_mes=hoje.month,
-        filtros={"ano": ano, "mes": mes, "setor": setor}
-    )
-
-@app.route("/escalas/<int:escala_mes_id>")
-@login_required
-@funcionario_required
-def escala_mes_view(escala_mes_id):
-    escala = EscalaMes.query.get_or_404(escala_mes_id)
-
-    itens = (
-        EscalaItem.query
-        .filter_by(escala_mes_id=escala.id)
-        .order_by(EscalaItem.funcionario_id.asc(), EscalaItem.inicio.asc())
-        .all()
-    )
-
-    por_func = {}
-    funcionarios_ids = sorted(set([i.funcionario_id for i in itens]))
-
-    funcionarios = (
-        Funcionario.query
-        .filter(Funcionario.id.in_(funcionarios_ids))
-        .order_by(Funcionario.nome)
-        .all()
-    )
-
-    func_map = {f.id: f for f in funcionarios}
-    for it in itens:
-        por_func.setdefault(it.funcionario_id, []).append(it)
-
-    dias_no_mes = calendar.monthrange(escala.ano, escala.mes)[1]
-    dias = list(range(1, dias_no_mes + 1))
-
-    return render_template(
-        "escala_mes_view.html",
-        escala=escala,
-        por_func=por_func,
-        func_map=func_map,
-        dias=dias
-    )
-
-@app.route("/escalas/<int:escala_mes_id>/pdf")
-@login_required
-@funcionario_required
-def escala_mes_pdf(escala_mes_id):
-    escala = EscalaMes.query.get_or_404(escala_mes_id)
-
-    itens = (
-        EscalaItem.query
-        .filter_by(escala_mes_id=escala.id)
-        .order_by(EscalaItem.funcionario_id.asc(), EscalaItem.inicio.asc())
-        .all()
-    )
-
-    por_func = {}
-    funcionarios_ids = sorted(set([i.funcionario_id for i in itens]))
-
-    funcionarios = (
-        Funcionario.query
-        .filter(Funcionario.id.in_(funcionarios_ids))
-        .order_by(Funcionario.nome)
-        .all()
-    )
-    func_map = {f.id: f for f in funcionarios}
-
-    for it in itens:
-        por_func.setdefault(it.funcionario_id, []).append(it)
-
-    dias_no_mes = calendar.monthrange(escala.ano, escala.mes)[1]
-    dias = list(range(1, dias_no_mes + 1))
-
-    buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-    w, h = A4
-
-    title = f"Escala {escala.mes:02d}/{escala.ano} — {escala.setor or 'Todos'}"
-
-    y = h - 2 * cm
-    c.setFont("Helvetica-Bold", 14)
-    c.drawCentredString(w / 2, y, "Hospital Municipal da Mulher")
-    y -= 18
-    c.setFont("Helvetica", 11)
-    c.drawCentredString(w / 2, y, title)
-    y -= 18
-
-    c.setFont("Helvetica", 9)
-    c.drawString(2 * cm, y, f"Emitido em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-    y -= 12
-    c.line(2 * cm, y, w - 2 * cm, y)
-    y -= 16
-
-    col_name_w = 6.2 * cm
-    block_size = 15
-    day_blocks = [dias[i:i+block_size] for i in range(0, len(dias), block_size)]
-    col_day_w = (w - 2*cm - 2*cm - col_name_w) / block_size
-
-    def draw_header(block_days, y_):
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(2 * cm, y_, "Funcionário")
-        x = 2 * cm + col_name_w
-        for d in block_days:
-            c.drawString(x + 2, y_, f"{d:02d}")
-            x += col_day_w
-        y_ -= 12
-        c.setFont("Helvetica", 9)
-        return y_
-
-    def tipo_label(tipo):
-        if tipo == "EXPEDIENTE": return "EXP"
-        if tipo == "FOLGA": return "F"
-        if tipo == "PLANTAO_24H": return "24H"
-        return "-"
-
-    ordered_ids = sorted(func_map.keys(), key=lambda fid: (func_map[fid].nome or "").lower())
-
-    for block_days in day_blocks:
-        if y < 4 * cm:
-            c.showPage()
-            y = h - 2 * cm
-
-        y = draw_header(block_days, y)
-
-        for fid in ordered_ids:
-            f = func_map.get(fid)
-            itens_f = por_func.get(fid, [])
-
-            dia_tipo = {}
-            for it in itens_f:
-                dia_tipo[int(it.inicio.strftime("%d"))] = it.tipo
-
-            nome = (f.nome if f else "Funcionário")
-            if len(nome) > 35:
-                nome = nome[:35] + "..."
-
-            c.drawString(2 * cm, y, nome)
-
-            x = 2 * cm + col_name_w
-            for d in block_days:
-                c.drawString(x + 6, y, tipo_label(dia_tipo.get(d)))
-                x += col_day_w
-
-            y -= 12
-            if y < 2.5 * cm:
-                c.showPage()
-                y = h - 2 * cm
-                y = draw_header(block_days, y)
-
-        y -= 10
-        c.setStrokeColorRGB(0.85, 0.85, 0.85)
-        c.line(2 * cm, y, w - 2 * cm, y)
-        c.setStrokeColorRGB(0, 0, 0)
-        y -= 14
-
-    c.save()
-    buffer.seek(0)
-
-    nome_setor = (escala.setor or "Todos").replace(" ", "_").replace("/", "_")
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name=f"escala_{nome_setor}_{escala.mes:02d}_{escala.ano}.pdf",
-        mimetype="application/pdf"
-    )
-
-# ==================================================
-# ✅ PDF DA ESCALA DO MÊS (ADMIN)
-# ==================================================
-
-@app.route("/admin/escalas/<int:escala_mes_id>/pdf")
-@login_required
-@direcao_required
-def admin_escala_mes_pdf(escala_mes_id):
-    escala = EscalaMes.query.get_or_404(escala_mes_id)
-
-    itens = (
-        EscalaItem.query
-        .filter_by(escala_mes_id=escala.id)
-        .order_by(EscalaItem.funcionario_id.asc(), EscalaItem.inicio.asc())
-        .all()
-    )
-
-    por_func = {}
-    funcionarios_ids = sorted(set([i.funcionario_id for i in itens]))
-
-    funcionarios = (
-        Funcionario.query
-        .filter(Funcionario.id.in_(funcionarios_ids))
-        .order_by(Funcionario.nome.asc())
-        .all()
-    )
-    func_map = {f.id: f for f in funcionarios}
-
-    for it in itens:
-        dia = int(it.inicio.strftime("%d"))
-        por_func.setdefault(it.funcionario_id, {})[dia] = it.tipo
-
-    dias_no_mes = calendar.monthrange(escala.ano, escala.mes)[1]
-    dias = list(range(1, dias_no_mes + 1))
-
-    def label(tipo):
-        if tipo == "EXPEDIENTE":
-            return "EXP"
-        if tipo == "FOLGA":
-            return "F"
-        if tipo == "PLANTAO_24H":
-            return "24H"
-        return "-"
-
-    buffer = io.BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=landscape(A4))
-    W, H = landscape(A4)
-
-    margem_x = 1.2 * cm
-    margem_y = 1.0 * cm
-
-    y = H - 1.2 * cm
-    pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawString(margem_x, y, "Hospital Municipal da Mulher")
-    y -= 0.6 * cm
-
-    pdf.setFont("Helvetica", 11)
-    titulo = f"Escala {escala.mes:02d}/{escala.ano}  |  Setor: {escala.setor or 'Todos'}"
-    pdf.drawString(margem_x, y, titulo)
-    y -= 0.6 * cm
-
-    pdf.setFont("Helvetica", 9)
-    pdf.drawString(margem_x, y, f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-    y -= 0.5 * cm
-
-    pdf.setFont("Helvetica", 9)
-    pdf.drawString(margem_x, y, "Legenda: EXP=Expediente | F=Folga | 24H=Plantão 24h")
-    y -= 0.7 * cm
-
-    col_nome_w = 7.0 * cm
-    col_dia_w = 0.55 * cm
-    row_h = 0.55 * cm
-
-    def desenhar_cabecalho_tabela(y_base):
-        pdf.setFont("Helvetica-Bold", 8)
-        x = margem_x
-        pdf.rect(x, y_base - row_h + 2, col_nome_w, row_h, stroke=1, fill=0)
-        pdf.drawString(x + 2, y_base - row_h + 4, "Funcionário")
-        x += col_nome_w
-
-        for d in dias:
-            pdf.rect(x, y_base - row_h + 2, col_dia_w, row_h, stroke=1, fill=0)
-            pdf.drawCentredString(x + col_dia_w / 2, y_base - row_h + 4, f"{d:02d}")
-            x += col_dia_w
-
-    def nova_pagina():
-        nonlocal y
-        pdf.showPage()
-
-        y_top = H - 1.2 * cm
-        pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawString(margem_x, y_top, "Hospital Municipal da Mulher")
-
-        pdf.setFont("Helvetica", 11)
-        pdf.drawString(margem_x, y_top - 0.6 * cm, titulo)
-
-        pdf.setFont("Helvetica", 9)
-        pdf.drawString(margem_x, y_top - 1.1 * cm, "Legenda: EXP=Expediente | F=Folga | 24H=Plantão 24h")
-
-        y = y_top - 1.8 * cm
-        desenhar_cabecalho_tabela(y)
-        y -= row_h
-        pdf.setFont("Helvetica", 8)
-
-    desenhar_cabecalho_tabela(y)
-    y -= row_h
-    pdf.setFont("Helvetica", 8)
-
-    for f in funcionarios:
-        if y < margem_y + 2 * cm:
-            nova_pagina()
-
-        x = margem_x
-        nome = (f.nome or "Funcionário")
-        if len(nome) > 42:
-            nome = nome[:42] + "..."
-
-        pdf.rect(x, y - row_h + 2, col_nome_w, row_h, stroke=1, fill=0)
-        pdf.drawString(x + 2, y - row_h + 4, nome)
-        x += col_nome_w
-
-        mapa = por_func.get(f.id, {})
-        for d in dias:
-            lab = label(mapa.get(d))
-            pdf.rect(x, y - row_h + 2, col_dia_w, row_h, stroke=1, fill=0)
-            pdf.drawCentredString(x + col_dia_w / 2, y - row_h + 4, lab)
-            x += col_dia_w
-
-        y -= row_h
-
-    pdf.save()
-    buffer.seek(0)
-
-    nome_arquivo = f"escala_{escala.mes:02d}_{escala.ano}_{(escala.setor or 'TODOS').replace(' ', '_')}.pdf"
-
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name=nome_arquivo,
-        mimetype="application/pdf"
-    )
-
-@app.route("/admin/escalas/<int:escala_mes_id>/excluir", methods=["POST"])
-@login_required
-@direcao_required
-def admin_excluir_escala(escala_mes_id):
-    escala = EscalaMes.query.get_or_404(escala_mes_id)
-    db.session.delete(escala)
-    db.session.commit()
-    return redirect(url_for("admin_escalas"))
-
-# ==================================================
-# ADMIN - VER / EDITAR / RESETAR / EXCLUIR
-# ==================================================
-
-@app.route("/admin/funcionario/<int:id>")
-@login_required
-@direcao_required
-def admin_ver_funcionario(id):
-    funcionario = Funcionario.query.get_or_404(id)
-    return render_template("admin/ver_funcionario.html", funcionario=funcionario)
-
-@app.route("/admin/funcionario/<int:id>/editar", methods=["GET", "POST"])
-@login_required
-@direcao_required
-def admin_editar_funcionario(id):
-    funcionario = Funcionario.query.get_or_404(id)
-
-    if request.method == "POST":
-        funcionario.nome = request.form["nome"]
-        funcionario.cpf = request.form["cpf"]
-        funcionario.funcao = request.form["funcao"]
-
-        funcionario.setor = request.form.get("setor")
-
-        funcionario.telefone = request.form["telefone"]
-        funcionario.email = request.form["email"]
-        funcionario.status = request.form["status"]
-
-        funcionario.escala_tipo = request.form.get("escala_tipo", funcionario.escala_tipo)
-        funcionario.plantao_base = request.form.get("plantao_base") or None
-
-        db.session.commit()
-        return redirect(url_for("admin_ver_funcionario", id=id))
-
-    return render_template("admin/editar_funcionario.html", funcionario=funcionario)
-
-@app.route("/admin/funcionario/<int:id>/resetar-senha", methods=["GET", "POST"])
-@login_required
-@direcao_required
-def admin_resetar_senha(id):
-    funcionario = Funcionario.query.get_or_404(id)
-
-    if request.method == "POST":
-        funcionario.senha = request.form["senha"]
-        db.session.commit()
-        return redirect(url_for("admin_ver_funcionario", id=id))
-
-    return render_template("admin/resetar_senha.html", funcionario=funcionario)
-
-@app.route("/admin/funcionario/<int:id>/excluir", methods=["POST"])
-@login_required
-@direcao_required
-def admin_excluir_funcionario(id):
-    user = Funcionario.query.get(session["user_id"])
-    funcionario = Funcionario.query.get_or_404(id)
-
-    if funcionario.id == user.id:
-        return redirect(url_for("admin_funcionarios"))
-
-    db.session.delete(funcionario)
-    db.session.commit()
-    return redirect(url_for("admin_funcionarios"))
+    return render_template("admin/escala_mes.html", escala=escala, por_func=por_func, func_map=func_map, dias=dias)
 
 # ==================================================
 # ✅ EDITAR DIA DA ESCALA (CÉLULA CLICÁVEL)
@@ -1771,6 +1315,7 @@ def admin_escala_editar_dia(escala_mes_id):
 # ==================================================
 # IMPORTAR FUNCIONÁRIOS (CSV)
 # ==================================================
+
 import pandas as pd
 import re
 import unicodedata
@@ -1857,7 +1402,6 @@ def importar_funcionarios():
 
         cargo_up = cargo.upper()
 
-        # ✅ escala automática
         if "MEDICO" in cargo_up or "MÉDICO" in cargo_up or "PLANT" in cargo_up:
             escala = "PLANTONISTA_24_96"
             plantao_base = date.today().strftime("%Y-%m-%d")
@@ -1904,8 +1448,9 @@ def importar_funcionarios():
     return msg
 
 # ==================================================
-# START
+# START (LOCAL)
 # ==================================================
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("FLASK_DEBUG", "0") == "1"
