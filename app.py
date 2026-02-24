@@ -1,3 +1,5 @@
+import eventlet
+eventlet.monkey_patch()
 from flask import Flask, render_template, request, redirect, session, send_file, url_for
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit, join_room
