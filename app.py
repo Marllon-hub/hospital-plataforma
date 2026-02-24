@@ -1,5 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
 from flask import Flask, render_template, request, redirect, session, send_file, url_for
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit, join_room
@@ -47,7 +45,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ✅ SocketIO: em produção, setar SOCKETIO_CORS com seu domínio (ex: https://plataforma.seudominio.com.br)
 socketio_cors = os.getenv("SOCKETIO_CORS", "*")
-socketio = SocketIO(app, cors_allowed_origins=socketio_cors)
+socketio = SocketIO(app, cors_allowed_origins=socketio_cors, async_mode="threading")
 
 db.init_app(app)
 
@@ -1908,7 +1906,6 @@ def importar_funcionarios():
 # ==================================================
 # START
 # ==================================================
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # ✅ Railway usa PORT
-    socketio.run(app, host="0.0.0.0", port=port, debug=False)  # ✅ produção: debug False
+ if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)
