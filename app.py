@@ -56,15 +56,13 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # ✅ SocketIO: THREADING (mais estável no Railway; websockets podem cair para long-polling)
 socketio_cors = os.getenv("SOCKETIO_CORS", "*")
+
 socketio = SocketIO(
     app,
     cors_allowed_origins=socketio_cors,
-    async_mode="threading",
     ping_interval=25,
-    ping_timeout=60,
+    ping_timeout=60
 )
-
-db.init_app(app)
 
 # ==================================================
 # SQLITE - PRAGMAS ANTI LOCK (WAL + timeout)
@@ -1450,11 +1448,15 @@ def importar_funcionarios():
 # ==================================================
 # START (LOCAL)
 # ==================================================
-
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("FLASK_DEBUG", "0") == "1"
-    socketio.run(app, host="0.0.0.0", port=port, debug=debug)
-
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        debug=debug,
+        allow_unsafe_werkzeug=True  # <-- só afeta execução local
+    )
 # edite app.py e adicione uma linha tipo:
 # print("boot ok")
