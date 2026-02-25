@@ -60,8 +60,9 @@ socketio_cors = os.getenv("SOCKETIO_CORS", "*")
 socketio = SocketIO(
     app,
     cors_allowed_origins=socketio_cors,
+    async_mode="eventlet",   # ✅ FIXA o modo
     ping_interval=25,
-    ping_timeout=60
+    ping_timeout=60,
 )
 
 # ==================================================
