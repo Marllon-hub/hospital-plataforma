@@ -65,7 +65,7 @@ socketio_async = os.getenv("SOCKETIO_ASYNC", "threading")  # "threading" | "even
 socketio = SocketIO(
     app,
     cors_allowed_origins=socketio_cors,
-    async_mode=socketio_async,
+    async_mode="threading",
     ping_interval=25,
     ping_timeout=60,
 )
