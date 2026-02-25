@@ -1,1 +1,1 @@
-web: gunicorn -k gthread --threads 8 -w 1 -b 0.0.0.0:$PORT app:app
+web: gunicorn -b 0.0.0.0:$PORT wsgi:app --access-logfile - --error-logfile - --log-level debug
