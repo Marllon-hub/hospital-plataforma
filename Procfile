@@ -1,1 +1,1 @@
-web: gunicorn -k eventlet -w 1 -b 0.0.0.0:$PORT app:socketio
+web: gunicorn -k gthread --threads 8 -w 1 -b 0.0.0.0:$PORT app:app
