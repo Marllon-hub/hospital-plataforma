@@ -54,13 +54,18 @@ if not db_uri:
 app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ✅ SocketIO: THREADING (mais estável no Railway; websockets podem cair para long-polling)
+# ✅ IMPORTANTE: registrar o app no SQLAlchemy (isso resolve o erro do Railway)
+db.init_app(app)
+
+# ✅ SocketIO: em Railway, THREADING costuma ser mais estável.
+# Se quiser forçar outro modo: exporte SOCKETIO_ASYNC=eventlet (apenas se souber que está ok)
 socketio_cors = os.getenv("SOCKETIO_CORS", "*")
+socketio_async = os.getenv("SOCKETIO_ASYNC", "threading")  # "threading" | "eventlet" | "gevent"
 
 socketio = SocketIO(
     app,
     cors_allowed_origins=socketio_cors,
-    async_mode="eventlet",   # ✅ FIXA o modo
+    async_mode=socketio_async,
     ping_interval=25,
     ping_timeout=60,
 )
@@ -1457,7 +1462,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
         debug=debug,
-        allow_unsafe_werkzeug=True  # <-- só afeta execução local
+        allow_unsafe_werkzeug=debug  # ✅ só libera Werkzeug quando estiver em debug/local
     )
-# edite app.py e adicione uma linha tipo:
-# print("boot ok")
