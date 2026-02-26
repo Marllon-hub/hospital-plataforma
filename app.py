@@ -59,13 +59,15 @@ db.init_app(app)
 
 # ✅ SocketIO: em Railway, THREADING costuma ser mais estável.
 # Se quiser forçar outro modo: exporte SOCKETIO_ASYNC=eventlet (apenas se souber que está ok)
+# ✅ SocketIO: em Railway, THREADING costuma ser mais estável.
+# Se quiser forçar outro modo: exporte SOCKETIO_ASYNC=eventlet (ou gevent)
 socketio_cors = os.getenv("SOCKETIO_CORS", "*")
-socketio_async = os.getenv("SOCKETIO_ASYNC", "threading")  # "threading" | "eventlet" | "gevent"
+socketio_async = os.getenv("SOCKETIO_ASYNC", "threading").strip().lower()  # threading|eventlet|gevent
 
 socketio = SocketIO(
     app,
     cors_allowed_origins=socketio_cors,
-    async_mode="threading",
+    async_mode=socketio_async,
     ping_interval=25,
     ping_timeout=60,
 )
