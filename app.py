@@ -227,33 +227,39 @@ def index():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        user = Funcionario.query.filter_by(
-            cpf=request.form["cpf"],
-            senha=request.form["senha"],
-            status="Ativo"
-        ).first()
+    print("🔥 LOGIN ACESSADO")
 
-        if user:
-            session.clear()
-            session["user_id"] = user.id
-            session["nome"] = user.nome
-            session["funcao"] = user.funcao
+    try:
+        if request.method == "POST":
+            print("POST recebido")
 
-            if user.funcao == "Direção":
-                return redirect(url_for("admin_dashboard"))
+            user = Funcionario.query.filter_by(
+                cpf=request.form["cpf"],
+                senha=request.form["senha"],
+                status="Ativo"
+            ).first()
 
-            return redirect(url_for("dashboard"))
+            print("Consulta executada")
 
-        return render_template("login.html", erro="Login inválido")
+            if user:
+                session.clear()
+                session["user_id"] = user.id
+                session["nome"] = user.nome
+                session["funcao"] = user.funcao
 
-    return render_template("login.html")
+                if user.funcao == "Direção":
+                    return redirect(url_for("admin_dashboard"))
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
+                return redirect(url_for("dashboard"))
 
+            return render_template("login.html", erro="Login inválido")
+
+        print("Renderizando login.html")
+        return render_template("login.html")
+
+    except Exception as e:
+        print("❌ ERRO LOGIN:", str(e))
+        raise
 # ==================================================
 # DASHBOARD FUNCIONÁRIO
 # ==================================================
