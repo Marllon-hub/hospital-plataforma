@@ -31,18 +31,11 @@ import sqlite3
 # ==================================================
 
 app = Flask(__name__)
-
-# ✅ Produção: segredo via variável de ambiente (fallback para dev/local)
 app.secret_key = os.getenv("SECRET_KEY", "hospital2026_dev_troque_em_producao")
 
-# ✅ Garantir pasta instance no Railway (evita 502 por falta de caminho do sqlite)
 os.makedirs(app.instance_path, exist_ok=True)
 default_db_path = os.path.join(app.instance_path, "hospital.db")
 
-# ✅ Banco: prioridade:
-# 1) DATABASE_URL (se existir)
-# 2) SQLITE_PATH (se existir)
-# 3) instance/hospital.db
 db_uri = os.getenv("DATABASE_URL")
 if not db_uri:
     db_path = os.getenv("SQLITE_PATH", default_db_path)
@@ -54,20 +47,12 @@ if not db_uri:
 app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# ✅ IMPORTANTE: registrar o app no SQLAlchemy (isso resolve o erro do Railway)
 db.init_app(app)
-
-# ✅ SocketIO: em Railway, THREADING costuma ser mais estável.
-# Se quiser forçar outro modo: exporte SOCKETIO_ASYNC=eventlet (apenas se souber que está ok)
-# ✅ SocketIO: em Railway, THREADING costuma ser mais estável.
-# Se quiser forçar outro modo: exporte SOCKETIO_ASYNC=eventlet (ou gevent)
-socketio_cors = os.getenv("SOCKETIO_CORS", "*")
-socketio_async = os.getenv("SOCKETIO_ASYNC", "threading").strip().lower()  # threading|eventlet|gevent
 
 socketio = SocketIO(
     app,
-    cors_allowed_origins=socketio_cors,
-    async_mode=socketio_async,
+    cors_allowed_origins=os.getenv("SOCKETIO_CORS", "*"),
+    async_mode="eventlet",
     ping_interval=25,
     ping_timeout=60,
 )
