@@ -303,7 +303,61 @@ def escalas_view():
 def comunicados():
     comunicados = list(reversed(comunicados_lista)) if comunicados_lista else []
     return render_template("comunicados.html", comunicados=comunicados)
+#===================================================
+#ESCALA PDF
+#===================================================
 
+@app.get("/admin/escalas/<int:escala_mes_id>/pdf")
+@direcao_required
+@login_required
+def admin_escala_mes_pdf(escala_mes_id):
+    escala = EscalaMes.query.get_or_404(escala_mes_id)
+    itens = (EscalaItem.query
+             .filter_by(escala_mes_id=escala_mes_id)
+             .order_by(EscalaItem.inicio.asc())
+             .all())
+
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=landscape(A4))
+    w, h = landscape(A4)
+
+    titulo = f"ESCALA {escala.mes:02d}/{escala.ano} - SETOR: {escala.setor or 'TODOS'}"
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(30, h - 40, titulo)
+
+    # Cabeçalho
+    y = h - 70
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(30, y, "Funcionário")
+    c.drawString(320, y, "Início")
+    c.drawString(430, y, "Fim")
+    c.drawString(540, y, "Tipo")
+    y -= 18
+
+    c.setFont("Helvetica", 9)
+
+    def fmt(dt):
+        return dt.strftime("%d/%m/%Y %H:%M") if dt else "-"
+
+    for it in itens:
+        nome = it.funcionario.nome if it.funcionario else f"ID {it.funcionario_id}"
+        c.drawString(30, y, (nome[:50] + "...") if len(nome) > 53 else nome)
+        c.drawString(320, y, fmt(it.inicio))
+        c.drawString(430, y, fmt(it.fim))
+        c.drawString(540, y, it.tipo or "-")
+        y -= 14
+
+        if y < 40:
+            c.showPage()
+            y = h - 40
+            c.setFont("Helvetica", 9)
+
+    c.showPage()
+    c.save()
+
+    buffer.seek(0)
+    filename = f"escala_{escala.ano}_{escala.mes:02d}_{(escala.setor or 'todos').replace(' ', '_')}.pdf"
+    return send_file(buffer, as_attachment=True, download_name=filename, mimetype="application/pdf")
 # ==================================================
 # CURSOS FUNCIONÁRIO
 # ==================================================
