@@ -281,7 +281,18 @@ def minha_escala():
         {"nome": "Administrativo", "arquivo": "administrativo.pdf"},
     ]
     return render_template("minha_escala.html", setores=setores)
+#===================================================
+#ESCALAS
+#===================================================
+@app.route("/escalas")
+@login_required
+def escalas_view():
+    # se for Direção, vai para escalas da Direção
+    if session.get("funcao") == "Direção":
+        return redirect(url_for("admin_escalas"))
 
+    # se for Funcionário, vai para a escala antiga (PDF) ou a tela que você quiser
+    return redirect(url_for("minha_escala"))
 # ==================================================
 # COMUNICADOS (FUNCIONÁRIO)
 # ==================================================
