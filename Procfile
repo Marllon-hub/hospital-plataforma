@@ -1,1 +1,1 @@
-web: gunicorn -k eventlet -w 1 app:app --bind 0.0.0.0:$PORT --log-level debug --access-logfile - --error-logfile - --capture-output
+web: gunicorn -k eventlet -w 1 wsgi:app --bind 0.0.0.0:$PORT --log-level debug --access-logfile - --error-logfile - --capture-output

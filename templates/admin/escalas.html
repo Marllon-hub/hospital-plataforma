@@ -99,10 +99,14 @@
             🔎 Abrir
           </a>
 
+          <!-- ✅ EXCLUIR: agora aponta para um endpoint que EXISTE (admin_escalas) -->
           <form method="post"
-                action="{{ url_for('admin_excluir_escala', escala_mes_id=e.id) }}"
+                action="{{ url_for('admin_escalas') }}"
                 onsubmit="return confirm('Deseja excluir a escala {{ '%02d'|format(e.mes) }}/{{ e.ano }}?');"
                 style="margin:0;">
+            <input type="hidden" name="acao" value="excluir">
+            <input type="hidden" name="escala_mes_id" value="{{ e.id }}">
+
             <button type="submit"
                     style="background:#d9534f;
                            color:white;
