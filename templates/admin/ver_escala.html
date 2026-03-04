@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Escala {{ escala.mes }}/{{ escala.ano }}{% endblock %}
+{% block title %}Escala {{ "%02d"|format(escala.mes) }}/{{ escala.ano }}{% endblock %}
 {% block subtitle %}{{ escala.setor or "Todos os setores" }}{% endblock %}
 
 {% block content %}
@@ -7,42 +7,48 @@
 <h1>📅 Escala {{ "%02d"|format(escala.mes) }}/{{ escala.ano }}</h1>
 
 <div class="card" style="overflow:auto;">
-    <table class="table">
-        <tr>
-            <th style="min-width:220px;">Funcionário</th>
-            {% for d in dias %}
-                <th style="min-width:40px; text-align:center;">
-                    {{ d.day }}
-                </th>
-            {% endfor %}
-        </tr>
+  <table class="table">
+    <tr>
+      <th style="min-width:220px;">Funcionário</th>
+      {% for d in dias %}
+        <th style="min-width:40px; text-align:center;">
+          {{ d.day }}
+        </th>
+      {% endfor %}
+    </tr>
 
-        {% for f in funcionarios_linhas %}
-        <tr>
-            <td><strong>{{ f.nome }}</strong></td>
-            {% for d in dias %}
-                {% set t = f.dias.get(d) %}
-                <td style="text-align:center; font-size:12px;">
-                    {% if t == "PLANTAO_24H" %}
-                        🟦
-                    {% elif t == "EXPEDIENTE" %}
-                        🟩
-                    {% elif t == "FOLGA" %}
-                        🟥
-                    {% else %}
-                        —
-                    {% endif %}
-                </td>
-            {% endfor %}
-        </tr>
+    {% for f in funcionarios_linhas %}
+      <tr>
+        <td><strong>{{ f.nome }}</strong></td>
+
+        {% for d in dias %}
+          {# tenta pegar por objeto date e, se não achar, tenta por string YYYY-MM-DD #}
+          {% set t = f.dias.get(d) %}
+          {% if t is none %}
+            {% set t = f.dias.get(d.strftime("%Y-%m-%d")) %}
+          {% endif %}
+
+          <td style="text-align:center; font-size:12px;">
+            {% if t == "PLANTAO_24H" %}
+              🟦
+            {% elif t == "EXPEDIENTE" %}
+              🟩
+            {% elif t == "FOLGA" %}
+              🟥
+            {% else %}
+              —
+            {% endif %}
+          </td>
         {% endfor %}
-    </table>
+      </tr>
+    {% endfor %}
+  </table>
 
-    <div style="margin-top:10px; color:#666;">
-        <span>🟦 Plantão 24h</span> • <span>🟩 Expediente</span> • <span>🟥 Folga</span>
-    </div>
+  <div style="margin-top:10px; color:#666;">
+    <span>🟦 Plantão 24h</span> • <span>🟩 Expediente</span> • <span>🟥 Folga</span>
+  </div>
 </div>
 
-<a class="btn-outline" href="/admin/escalas">← Voltar</a>
+<a class="btn-outline" href="{{ url_for('admin_escalas') }}">← Voltar</a>
 
 {% endblock %}

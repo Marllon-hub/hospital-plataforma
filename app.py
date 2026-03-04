@@ -293,54 +293,6 @@ def escalas_view():
 
     # se for Funcionário, vai para a escala antiga (PDF) ou a tela que você quiser
     return redirect(url_for("minha_escala"))
-#==================================================
-#GERANDO ESCALA
-#==================================================
-@app.get("/admin/escalas/<int:escala_mes_id>/pdf")
-@direcao_required
-def admin_escala_mes_pdf(escala_mes_id):
-    # Busca a escala
-    escala = EscalaMes.query.get_or_404(escala_mes_id)
-
-    # Gera um PDF simples (placeholder) — depois a gente melhora o layout
-    buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=landscape(A4))
-    w, h = landscape(A4)
-
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(30, h - 40, f"Escala {escala.mes:02d}/{escala.ano} - Setor: {escala.setor or 'Todos'}")
-
-    c.setFont("Helvetica", 10)
-    y = h - 70
-    c.drawString(30, y, "Funcionario")
-    c.drawString(280, y, "Inicio")
-    c.drawString(430, y, "Fim")
-    c.drawString(560, y, "Tipo")
-    y -= 18
-
-    itens = (EscalaItem.query
-             .filter_by(escala_mes_id=escala.id)
-             .order_by(EscalaItem.inicio.asc())
-             .all())
-
-    for it in itens:
-        if y < 40:
-            c.showPage()
-            y = h - 40
-
-        nome = it.funcionario.nome if it.funcionario else f"ID {it.funcionario_id}"
-        c.drawString(30, y, (nome[:38] + "…") if len(nome) > 39 else nome)
-        c.drawString(280, y, it.inicio.strftime("%d/%m/%Y %H:%M"))
-        c.drawString(430, y, it.fim.strftime("%d/%m/%Y %H:%M"))
-        c.drawString(560, y, it.tipo)
-        y -= 14
-
-    c.showPage()
-    c.save()
-
-    buffer.seek(0)
-    filename = f"escala_{escala.ano}_{escala.mes:02d}_{(escala.setor or 'todos').replace(' ','_')}.pdf"
-    return send_file(buffer, as_attachment=True, download_name=filename, mimetype="application/pdf")
 
 # ==================================================
 # COMUNICADOS (FUNCIONÁRIO)
