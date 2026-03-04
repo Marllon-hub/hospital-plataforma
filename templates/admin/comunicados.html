@@ -39,7 +39,6 @@
       <div>
         <label style="font-weight:700;">Texto (com edição)</label>
 
-        <!-- toolbar simples -->
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;">
           <button type="button" class="btn-outline" onclick="cmd('bold')"><b>B</b></button>
           <button type="button" class="btn-outline" onclick="cmd('italic')"><i>I</i></button>
@@ -50,13 +49,11 @@
           <button type="button" class="btn-outline" onclick="cmd('removeFormat')">🧹 Limpar</button>
         </div>
 
-        <!-- editor -->
         <div id="editor"
              contenteditable="true"
              style="min-height:180px; border:1px solid #ddd; border-radius:12px; padding:12px; background:#fff;">
         </div>
 
-        <!-- campo escondido que vai para o backend -->
         <input type="hidden" name="conteudo_html" id="conteudo_html">
         <small style="color:#6c757d;">Você pode publicar só o texto, só o PDF, ou os dois.</small>
       </div>
@@ -82,24 +79,55 @@
     {% if comunicados %}
       <div style="display:flex; flex-direction:column; gap:12px;">
         {% for c in comunicados %}
+
+          {# pega o id tanto se for objeto (c.id) quanto dict (c["id"]) #}
+          {% set cid = (c.id if c.id is defined else (c["id"] if "id" in c else None)) %}
+
           <div style="border:1px solid #eee; border-radius:12px; padding:14px;">
-            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
+
               <div>
-                <div style="font-weight:800; font-size:16px;">{{ c.titulo }}</div>
-                <div style="color:#6c757d; font-size:12px;">{{ c.data }}</div>
+                <div style="font-weight:800; font-size:16px;">
+                  {{ c.titulo if c.titulo is defined else c["titulo"] }}
+                </div>
+                <div style="color:#6c757d; font-size:12px;">
+                  {{ c.data if c.data is defined else c["data"] }}
+                </div>
               </div>
 
-              {% if c.pdf %}
-                <a class="btn-outline" target="_blank"
-                   href="{{ url_for('static', filename='uploads/comunicados/' ~ c.pdf) }}">
-                  📄 PDF
-                </a>
-              {% endif %}
+              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                {% set pdfname = (c.pdf if c.pdf is defined else (c["pdf"] if "pdf" in c else None)) %}
+                {% if pdfname %}
+                  <a class="btn-outline" target="_blank"
+                     href="{{ url_for('static', filename='uploads/comunicados/' ~ pdfname) }}">
+                    📄 PDF
+                  </a>
+                {% endif %}
+
+                {% if cid %}
+                  <form method="POST"
+                        action="/admin/comunicados/{{ cid }}/excluir"
+                        onsubmit="return confirm('Deseja excluir este comunicado?');"
+                        style="margin:0;">
+                    <button type="submit"
+                            class="btn-outline"
+                            style="border-color:#dc3545; color:#dc3545;">
+                      🗑 Excluir
+                    </button>
+                  </form>
+                {% else %}
+                  <span style="color:#dc3545; font-size:12px;">
+                    (Sem ID para excluir)
+                  </span>
+                {% endif %}
+              </div>
+
             </div>
 
-            {% if c.conteudo_html %}
+            {% set html = (c.conteudo_html if c.conteudo_html is defined else (c["conteudo_html"] if "conteudo_html" in c else "")) %}
+            {% if html %}
               <div style="margin-top:10px; color:#333;">
-                {{ c.conteudo_html|safe }}
+                {{ html|safe }}
               </div>
             {% endif %}
           </div>
