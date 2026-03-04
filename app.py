@@ -333,6 +333,35 @@ def admin_excluir_escala(escala_mes_id):
 def comunicados():
     comunicados = list(reversed(comunicados_lista)) if comunicados_lista else []
     return render_template("comunicados.html", comunicados=comunicados)
+# ==================================================
+# ADMIN - EXCLUIR COMUNICADO
+# ==================================================
+
+@app.route("/admin/comunicados/<int:comunicado_id>/excluir", methods=["POST"])
+@login_required
+@direcao_required
+def admin_excluir_comunicado(comunicado_id):
+    global comunicados_lista
+
+    # acha o comunicado
+    alvo = next((c for c in comunicados_lista if int(c.get("id", 0)) == comunicado_id), None)
+    if not alvo:
+        return redirect(url_for("admin_comunicados"))
+
+    # se tinha PDF, tenta apagar do disco
+    pdf_nome = alvo.get("pdf")
+    if pdf_nome:
+        try:
+            caminho_pdf = os.path.join(UPLOAD_COMUNICADOS, pdf_nome)
+            if os.path.exists(caminho_pdf):
+                os.remove(caminho_pdf)
+        except Exception:
+            pass
+
+    # remove da lista
+    comunicados_lista = [c for c in comunicados_lista if int(c.get("id", 0)) != comunicado_id]
+
+    return redirect(url_for("admin_comunicados"))
 #===================================================
 #ESCALA PDF
 #===================================================
