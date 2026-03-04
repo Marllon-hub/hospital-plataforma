@@ -1573,28 +1573,30 @@ def admin_funcionario_ver(func_id):
 @login_required
 @direcao_required
 def admin_funcionario_editar(func_id):
-    func = Funcionario.query.get_or_404(func_id)
+    funcionario = Funcionario.query.get_or_404(func_id)
 
     if request.method == "POST":
-        func.nome = request.form.get("nome")
-        func.cpf = request.form.get("cpf")
-        func.email = request.form.get("email")
-        func.funcao = request.form.get("funcao")
-        func.status = request.form.get("status")
+        funcionario.nome = (request.form.get("nome") or "").strip()
+        funcionario.cpf = (request.form.get("cpf") or "").strip()
+        funcionario.funcao = (request.form.get("funcao") or "").strip()
 
-        # extras (se existirem no seu form)
-        func.telefone = request.form.get("telefone") or func.telefone
-        func.setor = request.form.get("setor") or func.setor
-        func.cargo = request.form.get("cargo") or func.cargo
-        func.turno = request.form.get("turno") or func.turno
-        func.tipo_vinculo = request.form.get("tipo_vinculo") or func.tipo_vinculo
-        func.carga_horaria = request.form.get("carga_horaria") or func.carga_horaria
+        funcionario.setor = request.form.get("setor") or None
+        funcionario.telefone = request.form.get("telefone") or None
+        funcionario.email = request.form.get("email") or None
+        funcionario.status = request.form.get("status") or "Ativo"
+
+        # Escala
+        funcionario.escala_tipo = request.form.get("escala_tipo") or "SEG_SEX"
+        plantao_base = request.form.get("plantao_base") or None
+        if funcionario.escala_tipo == "PLANTONISTA_24_96":
+            funcionario.plantao_base = plantao_base
+        else:
+            funcionario.plantao_base = None
 
         db.session.commit()
-        return redirect("/admin/funcionarios")
+        return redirect(url_for("admin_funcionario_ver", func_id=funcionario.id))
 
-    return render_template("admin/funcionario_editar.html", func=func)
-
+    return render_template("admin/funcionario_editar.html", funcionario=funcionario)
 
 # ==================================================
 # RESETAR SENHA
