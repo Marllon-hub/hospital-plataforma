@@ -1551,29 +1551,15 @@ def importar_funcionarios():
     return msg
 
 # ==================================================
-# LOGOUT
-# ==================================================
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/login")
-
-
-# ==================================================
 # VER FUNCIONÁRIO
 # ==================================================
 
 @app.route("/admin/funcionario/<int:func_id>")
 @login_required
-def admin_ver_funcionario(func_id):
-
+@direcao_required
+def admin_funcionario_ver(func_id):
     func = Funcionario.query.get_or_404(func_id)
-
-    return render_template(
-        "admin/funcionario_ver.html",
-        func=func
-    )
+    return render_template("admin/funcionario_ver.html", func=func)
 
 
 # ==================================================
@@ -1582,42 +1568,42 @@ def admin_ver_funcionario(func_id):
 
 @app.route("/admin/funcionario/<int:func_id>/editar", methods=["GET", "POST"])
 @login_required
-def admin_editar_funcionario(func_id):
-
+@direcao_required
+def admin_funcionario_editar(func_id):
     func = Funcionario.query.get_or_404(func_id)
 
     if request.method == "POST":
-
         func.nome = request.form.get("nome")
         func.cpf = request.form.get("cpf")
         func.email = request.form.get("email")
         func.funcao = request.form.get("funcao")
         func.status = request.form.get("status")
 
-        db.session.commit()
+        # extras (se existirem no seu form)
+        func.telefone = request.form.get("telefone") or func.telefone
+        func.setor = request.form.get("setor") or func.setor
+        func.cargo = request.form.get("cargo") or func.cargo
+        func.turno = request.form.get("turno") or func.turno
+        func.tipo_vinculo = request.form.get("tipo_vinculo") or func.tipo_vinculo
+        func.carga_horaria = request.form.get("carga_horaria") or func.carga_horaria
 
+        db.session.commit()
         return redirect("/admin/funcionarios")
 
-    return render_template(
-        "admin/funcionario_editar.html",
-        func=func
-    )
+    return render_template("admin/funcionario_editar.html", func=func)
 
 
 # ==================================================
 # RESETAR SENHA
 # ==================================================
 
-@app.route("/admin/funcionario/<int:func_id>/resetar-senha")
+@app.route("/admin/funcionario/<int:func_id>/resetar-senha", methods=["GET"])
 @login_required
-def admin_resetar_senha(func_id):
-
+@direcao_required
+def admin_funcionario_resetar_senha(func_id):
     func = Funcionario.query.get_or_404(func_id)
-
     func.senha = "1234"
-
     db.session.commit()
-
     return redirect("/admin/funcionarios")
 
 
@@ -1627,16 +1613,12 @@ def admin_resetar_senha(func_id):
 
 @app.route("/admin/funcionario/<int:func_id>/excluir", methods=["POST"])
 @login_required
-def admin_excluir_funcionario(func_id):
-
+@direcao_required
+def admin_funcionario_excluir(func_id):
     func = Funcionario.query.get_or_404(func_id)
-
     db.session.delete(func)
-
     db.session.commit()
-
     return redirect("/admin/funcionarios")
-
 # ==================================================
 # START (LOCAL)
 # ==================================================
