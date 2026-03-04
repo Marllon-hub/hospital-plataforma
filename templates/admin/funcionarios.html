@@ -5,6 +5,18 @@
 
 <div style="max-width:1100px; margin:0 auto;">
 
+  {# ✅ Mensagens rápidas via querystring (?ok=...&err=...) #}
+  {% if request.args.get("ok") %}
+    <div class="card" style="background:#e7f7ee; border:1px solid #b7ebc6; margin:0 0 14px 0;">
+      ✅ {{ request.args.get("ok") }}
+    </div>
+  {% endif %}
+  {% if request.args.get("err") %}
+    <div class="card" style="background:#fdecea; border:1px solid #f5c2c7; margin:0 0 14px 0;">
+      ❌ {{ request.args.get("err") }}
+    </div>
+  {% endif %}
+
   <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;">
     <div>
       <h1 style="margin:0 0 6px 0;">👥 Funcionários</h1>
@@ -24,7 +36,7 @@
         📄 Gerar PDF
       </a>
 
-      <!-- ✅ endpoint correto do seu app.py é admin_novo_funcionario -->
+      <!-- ✅ endpoint do seu app.py é /admin/funcionario/novo -->
       <a href="/admin/funcionario/novo" class="btn">➕ Novo Funcionário</a>
     </div>
   </div>
@@ -86,7 +98,7 @@
 
           <td style="padding:12px; border-top:1px solid #eee;">
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <!-- ⚠️ Esses links NÃO quebram a página. Se a rota não existir ainda, só dá 404 ao clicar. -->
+              <!-- ✅ Links diretos (não quebram a página se rota não existir; só dá 404 ao clicar) -->
               <a class="btn-outline" href="/admin/funcionario/{{ f.id }}">👁 Ver</a>
               <a class="btn-outline" href="/admin/funcionario/{{ f.id }}/editar">✏️ Editar</a>
               <a class="btn-outline" href="/admin/funcionario/{{ f.id }}/resetar-senha">🔑 Senha</a>

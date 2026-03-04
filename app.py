@@ -1602,9 +1602,9 @@ def admin_funcionario_editar(func_id):
 @direcao_required
 def admin_funcionario_resetar_senha(func_id):
     func = Funcionario.query.get_or_404(func_id)
-    func.senha = "1234"
+    func.senha = "1234"  # senha padrão
     db.session.commit()
-    return redirect("/admin/funcionarios")
+    return redirect(url_for("admin_funcionarios", ok=f"Senha do(a) {func.nome} resetada para 1234"))
 
 
 # ==================================================
