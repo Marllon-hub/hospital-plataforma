@@ -508,15 +508,34 @@ def alterar_senha():
     return render_template("alterar_senha.html", erro=erro, sucesso=sucesso)
 
 #==================================================
-#ALTERAR SENHA 2
+# RESETAR SENHA (DIREÇÃO)
 #==================================================
-@app.route("/admin/funcionario/<int:func_id>/resetar-senha")
+@app.route("/admin/funcionario/<int:func_id>/resetar-senha", methods=["GET", "POST"])
 @login_required
 @direcao_required
 def admin_resetar_senha(func_id):
+
     func = Funcionario.query.get_or_404(func_id)
-    func.senha = "1234"  # senha padrão (troque se quiser)
-    db.session.commit()
+
+    if request.method == "POST":
+
+        # senha padrão = CPF
+        cpf_limpo = "".join([c for c in (func.cpf or "") if c.isdigit()])
+
+        if not cpf_limpo:
+            return redirect(url_for("admin_funcionarios", err="CPF inválido"))
+
+        func.senha = cpf_limpo
+
+        db.session.commit()
+
+        return redirect(
+            url_for(
+                "admin_funcionarios",
+                ok=f"Senha de {func.nome} redefinida para o CPF"
+            )
+        )
+
     return redirect(url_for("admin_funcionarios"))
 # ==================================================
 # DASHBOARD DIREÇÃO
@@ -1597,39 +1616,6 @@ def admin_funcionario_editar(func_id):
         return redirect(url_for("admin_funcionario_ver", func_id=funcionario.id))
 
     return render_template("admin/funcionario_editar.html", funcionario=funcionario)
-
-# ==================================================
-# RESETAR SENHA
-# ==================================================
-from werkzeug.security import generate_password_hash
-from flask import request, redirect, url_for
-
-# ✅ RESETAR SENHA (POST) — redefine para CPF (somente números)
-@app.post("/admin/funcionario/<int:func_id>/resetar-senha")
-@direcao_required
-def admin_resetar_senha(func_id):
-    func = Funcionario.query.get_or_404(func_id)
-
-    # senha padrão = CPF (só números)
-    senha_nova = "".join([c for c in (func.cpf or "") if c.isdigit()])
-    if not senha_nova:
-        senha_nova = "123456"  # fallback se CPF estiver vazio
-
-    # ⚠️ Ajuste o nome do campo conforme seu models.py:
-    # Se for "senha_hash":
-    if hasattr(func, "senha_hash"):
-        func.senha_hash = generate_password_hash(senha_nova)
-    # Se for "senha":
-    elif hasattr(func, "senha"):
-        func.senha = generate_password_hash(senha_nova)
-    else:
-        # se não achar nenhum campo, para não quebrar
-        return redirect("/admin/funcionarios?ok=Não+encontrei+campo+de+senha+no+model")
-
-    db.session.commit()
-
-    # ✅ volta para a lista com mensagem
-    return redirect(f"/admin/funcionarios?ok=Senha+redefinida+para+o+CPF+do+funcionário")
 
 # ==================================================
 # EXCLUIR FUNCIONÁRIO
