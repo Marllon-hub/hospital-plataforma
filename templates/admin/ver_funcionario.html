@@ -3,9 +3,18 @@
 
 {% block content %}
 
+<div style="max-width:800px; margin:0 auto;">
+
 <h2>Dados do Funcionário</h2>
 
-<div style="display:flex; gap:10px; margin: 15px 0 20px;">
+{% if request.args.get("ok") %}
+<div class="card" style="background:#e8f7ee; border:1px solid #b8e2c8; margin-bottom:15px;">
+    🔑 {{ request.args.get("ok") }}
+</div>
+{% endif %}
+
+<div style="display:flex; gap:10px; margin: 15px 0 20px; flex-wrap:wrap;">
+
     <a href="/admin/funcionario/{{ funcionario.id }}/resetar-senha"
        class="btn-outline"
        style="border-color:#dc3545; color:#dc3545;">
@@ -20,19 +29,32 @@
     <a href="/admin/funcionarios" class="btn-outline">
         ← Voltar
     </a>
+
 </div>
 
 <div class="card">
 
     <p><strong>Nome:</strong> {{ funcionario.nome }}</p>
+
     <p><strong>CPF:</strong> {{ funcionario.cpf }}</p>
+
     <p><strong>Função:</strong> {{ funcionario.funcao }}</p>
-    <p><strong>Status:</strong> {{ funcionario.status }}</p>
+
+    <p><strong>Status:</strong>
+        {% if funcionario.status == "Ativo" %}
+            <span style="color:#198754; font-weight:700;">Ativo</span>
+        {% else %}
+            <span style="color:#dc3545; font-weight:700;">Inativo</span>
+        {% endif %}
+    </p>
 
     <hr style="margin:15px 0; border:none; border-top:1px solid #eee;">
 
-    <p><strong>Telefone:</strong> {{ funcionario.telefone }}</p>
-    <p><strong>Email:</strong> {{ funcionario.email }}</p>
+    <p><strong>Telefone:</strong> {{ funcionario.telefone or "-" }}</p>
+
+    <p><strong>Email:</strong> {{ funcionario.email or "-" }}</p>
+
+</div>
 
 </div>
 
