@@ -294,6 +294,26 @@ def escalas_view():
     # se for Funcionário, vai para a escala antiga (PDF) ou a tela que você quiser
     return redirect(url_for("minha_escala"))
 
+#==================================================
+#ESCALAS 2
+#==================================================
+@app.route("/admin/escalas/<int:escala_mes_id>/excluir", methods=["POST"])
+@login_required
+@direcao_required
+def admin_excluir_escala(escala_mes_id):
+    escala = EscalaMes.query.get_or_404(escala_mes_id)
+
+    try:
+        db.session.delete(escala)  # cascade apaga os itens (EscalaItem) por causa do seu relacionamento
+        db.session.commit()
+        flash("✅ Escala excluída com sucesso!", "success")
+    except Exception as e:
+        db.session.rollback()
+        print("❌ Erro ao excluir escala:", e)
+        flash("❌ Erro ao excluir a escala.", "danger")
+
+    return redirect(url_for("admin_escalas"))
+
 # ==================================================
 # COMUNICADOS (FUNCIONÁRIO)
 # ==================================================
