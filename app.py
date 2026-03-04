@@ -1553,13 +1553,16 @@ def importar_funcionarios():
 # ==================================================
 # VER FUNCIONÁRIO
 # ==================================================
-
 @app.route("/admin/funcionario/<int:func_id>")
 @login_required
-@direcao_required
 def admin_funcionario_ver(func_id):
-    func = Funcionario.query.get_or_404(func_id)
-    return render_template("admin/funcionario_ver.html", func=func)
+
+    funcionario = Funcionario.query.get_or_404(func_id)
+
+    return render_template(
+        "admin/ver_funcionario.html",
+        funcionario=funcionario
+    )
 
 
 # ==================================================
