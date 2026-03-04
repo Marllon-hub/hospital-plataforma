@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Editar Funcionário{% endblock %}
+
+{% block content %}
+
+<h2>Editar Funcionário</h2>
+
+<div class="card" style="max-width:700px;">
+
+<form method="POST" class="form-grid">
+
+    <label>Nome</label>
+    <input type="text" name="nome" value="{{ funcionario.nome }}" required>
+
+    <label>CPF</label>
+    <input type="text" name="cpf" value="{{ funcionario.cpf }}" required>
+
+    <label>Função</label>
+    <input type="text" name="funcao" value="{{ funcionario.funcao }}" required>
+
+    <label>Setor (Padrão)</label>
+    {% set opcoes_setor = [
+        "ADM(ARQUIVO)",
+        "ADM(ULTRASSON)",
+        "ADM(CONTAS MÉDICAS)",
+        "ADM(DIREÇÃO ADMINISTRATIVA)",
+        "ADM(DIREÇÃO MÉDICA)",
+        "ADM(FARMÁCIA)",
+        "ROUPÁRIA",
+        "SERVIÇO SOCIAL",
+        "PSICOLOGIA",
+        "NUTRIÇÃO",
+        "COSTURA",
+        "RECEPÇÃO",
+        "ASG",
+        "MAQUEIRO",
+        "DIRETORA MÉDICA",
+        "DIRETORA ADM",
+        "MÉDICO(ANESTESISTA)",
+        "MÉDICO(GINECÓ)",
+        "MÉDICO(NEONATOLOGIA E SALA DE PARTO)",
+        "MÉDICO(OBSTETRÍCIA)",
+        "MÉDICO(PEDIATRIA)",
+        "MÉDICO(USG)",
+        "MÉDICO(VISITADOR OBSTETRÍCIA)",
+        "MÉDICO(NEP)",
+        "MÉDICO(CIRURGIA PEDIÁTRICA)"
+    ] %}
+    <select name="setor" required>
+        <option value="" disabled {% if not funcionario.setor %}selected{% endif %}>Selecione...</option>
+        {% for s in opcoes_setor %}
+            <option value="{{ s }}" {% if funcionario.setor == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Telefone</label>
+    <input type="text" name="telefone" value="{{ funcionario.telefone }}">
+
+    <label>Email</label>
+    <input type="email" name="email" value="{{ funcionario.email }}">
+
+    <label>Status</label>
+    <select name="status">
+        <option value="Ativo" {% if funcionario.status == "Ativo" %}selected{% endif %}>Ativo</option>
+        <option value="Inativo" {% if funcionario.status == "Inativo" %}selected{% endif %}>Inativo</option>
+    </select>
+
+    <hr style="margin:18px 0; border:none; border-top:1px solid #eee;">
+
+    <h3 style="margin:0 0 10px 0;">Escala</h3>
+
+    <label>Tipo de escala</label>
+    <select name="escala_tipo" required>
+        <option value="SEG_SEX" {% if (funcionario.escala_tipo or "SEG_SEX") == "SEG_SEX" %}selected{% endif %}>
+            SEG-SEX (08:00–17:00) + folga Sáb/Dom
+        </option>
+        <option value="PLANTONISTA_24_96" {% if funcionario.escala_tipo == "PLANTONISTA_24_96" %}selected{% endif %}>
+            Plantonista 24x96 (ciclo a cada 5 dias)
+        </option>
+    </select>
+
+    <label>Base do plantão (YYYY-MM-DD)</label>
+    <input
+        type="date"
+        name="plantao_base"
+        value="{{ funcionario.plantao_base or '' }}"
+        placeholder="YYYY-MM-DD"
+    >
+    <small style="grid-column: 1 / -1; color:#666; margin-top:-6px;">
+        Preencha apenas se o tipo de escala for <b>Plantonista 24x96</b>. É a data do primeiro plantão do ciclo.
+    </small>
+
+    <div style="margin-top:20px; display:flex; gap:10px;">
+
+        <button type="submit" class="btn-outline" style="background:#0d6efd; color:white;">
+            💾 Salvar Alterações
+        </button>
+
+        <a href="/admin/funcionario/{{ funcionario.id }}" class="btn-outline">
+            Cancelar
+        </a>
+
+    </div>
+
+</form>
+
+</div>
+
+<script>
+  // desabilita o campo base quando não for plantonista
+  const tipo = document.querySelector('select[name="escala_tipo"]');
+  const base = document.querySelector('input[name="plantao_base"]');
+  const setor = document.querySelector('select[name="setor"]');
+
+  function toggleBase(){
+    const isPlantonista = (tipo.value === "PLANTONISTA_24_96");
+    base.disabled = !isPlantonista;
+    if (!isPlantonista) base.value = "";
+  }
+
+  // opcional: se escolher um setor MÉDICO(...), sugere plantonista automaticamente
+  function autoTipoPorSetor(){
+    const v = (setor.value || "");
+    const isMedico = v.startsWith("MÉDICO(") || v === "DIRETORA MÉDICA";
+    if (isMedico) {
+      tipo.value = "PLANTONISTA_24_96";
+    }
+    toggleBase();
+  }
+
+  tipo.addEventListener("change", toggleBase);
+  setor.addEventListener("change", autoTipoPorSetor);
+
+  toggleBase();
+</script>
+
+{% endblock %}
