@@ -98,10 +98,16 @@
 
           <td style="padding:12px; border-top:1px solid #eee;">
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <!-- ✅ Links diretos (não quebram a página se rota não existir; só dá 404 ao clicar) -->
               <a class="btn-outline" href="/admin/funcionario/{{ f.id }}">👁 Ver</a>
               <a class="btn-outline" href="/admin/funcionario/{{ f.id }}/editar">✏️ Editar</a>
-              <a class="btn-outline" href="/admin/funcionario/{{ f.id }}/resetar-senha">🔑 Senha</a>
+
+              <!-- ✅ SENHA via POST (não recarrega "igual", vai voltar com ?ok=...) -->
+              <form method="POST"
+                    action="/admin/funcionario/{{ f.id }}/resetar-senha"
+                    style="display:inline;"
+                    onsubmit="return confirm('Deseja RESETAR a senha deste funcionário para o CPF?');">
+                <button type="submit" class="btn-outline">🔑 Senha</button>
+              </form>
 
               <form method="POST" action="/admin/funcionario/{{ f.id }}/excluir"
                     style="display:inline;"
