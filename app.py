@@ -1551,6 +1551,93 @@ def importar_funcionarios():
     return msg
 
 # ==================================================
+# LOGOUT
+# ==================================================
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
+
+# ==================================================
+# VER FUNCIONÁRIO
+# ==================================================
+
+@app.route("/admin/funcionario/<int:func_id>")
+@login_required
+def admin_ver_funcionario(func_id):
+
+    func = Funcionario.query.get_or_404(func_id)
+
+    return render_template(
+        "admin/funcionario_ver.html",
+        func=func
+    )
+
+
+# ==================================================
+# EDITAR FUNCIONÁRIO
+# ==================================================
+
+@app.route("/admin/funcionario/<int:func_id>/editar", methods=["GET", "POST"])
+@login_required
+def admin_editar_funcionario(func_id):
+
+    func = Funcionario.query.get_or_404(func_id)
+
+    if request.method == "POST":
+
+        func.nome = request.form.get("nome")
+        func.cpf = request.form.get("cpf")
+        func.email = request.form.get("email")
+        func.funcao = request.form.get("funcao")
+        func.status = request.form.get("status")
+
+        db.session.commit()
+
+        return redirect("/admin/funcionarios")
+
+    return render_template(
+        "admin/funcionario_editar.html",
+        func=func
+    )
+
+
+# ==================================================
+# RESETAR SENHA
+# ==================================================
+
+@app.route("/admin/funcionario/<int:func_id>/resetar-senha")
+@login_required
+def admin_resetar_senha(func_id):
+
+    func = Funcionario.query.get_or_404(func_id)
+
+    func.senha = "1234"
+
+    db.session.commit()
+
+    return redirect("/admin/funcionarios")
+
+
+# ==================================================
+# EXCLUIR FUNCIONÁRIO
+# ==================================================
+
+@app.route("/admin/funcionario/<int:func_id>/excluir", methods=["POST"])
+@login_required
+def admin_excluir_funcionario(func_id):
+
+    func = Funcionario.query.get_or_404(func_id)
+
+    db.session.delete(func)
+
+    db.session.commit()
+
+    return redirect("/admin/funcionarios")
+
+# ==================================================
 # START (LOCAL)
 # ==================================================
 if __name__ == "__main__":
