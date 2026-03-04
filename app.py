@@ -507,6 +507,17 @@ def alterar_senha():
 
     return render_template("alterar_senha.html", erro=erro, sucesso=sucesso)
 
+#==================================================
+#ALTERAR SENHA 2
+#==================================================
+@app.route("/admin/funcionario/<int:func_id>/resetar-senha")
+@login_required
+@direcao_required
+def admin_resetar_senha(func_id):
+    func = Funcionario.query.get_or_404(func_id)
+    func.senha = "1234"  # senha padrão (troque se quiser)
+    db.session.commit()
+    return redirect(url_for("admin_funcionarios"))
 # ==================================================
 # DASHBOARD DIREÇÃO
 # ==================================================
