@@ -339,7 +339,7 @@ def comunicados():
 from flask import redirect, url_for, request
 import os
 
-@app.post("/admin/comunicados/<int:comunicado_id>/excluir")
+@app.route("/admin/comunicados/<int:comunicado_id>/excluir", methods=["POST"])
 @login_required
 @direcao_required
 def admin_excluir_comunicado(comunicado_id):
@@ -358,7 +358,6 @@ def admin_excluir_comunicado(comunicado_id):
     db.session.delete(c)
     db.session.commit()
     return redirect(url_for("admin_comunicados"))
-
 #===================================================
 #ESCALA PDF
 #===================================================
