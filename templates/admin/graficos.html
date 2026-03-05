@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Gráficos{% endblock %}
+
+{% block content %}
+<h1>📊 Gráficos</h1>
+<p style="color:#666;">Visão rápida do Hospital Municipal da Mulher</p>
+
+<style>
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap:16px;
+  }
+  .card{
+    background:#fff;
+    border:1px solid #e6e6e6;
+    border-radius:14px;
+    padding:14px;
+  }
+  canvas{ width:100% !important; height:320px !important; }
+</style>
+
+<div class="grid">
+  <div class="card">
+    <h3>Funcionários ativos por Setor</h3>
+    <canvas id="chartSetor"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Funcionários ativos por Cargo</h3>
+    <canvas id="chartCargo"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Funcionários ativos por Vínculo</h3>
+    <canvas id="chartVinculo"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>{{ escala_titulo }}</h3>
+    <canvas id="chartEscala"></canvas>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const setoresLabels = {{ setores_labels|tojson }};
+  const setoresValues = {{ setores_values|tojson }};
+
+  const cargosLabels = {{ cargos_labels|tojson }};
+  const cargosValues = {{ cargos_values|tojson }};
+
+  const vincLabels = {{ vinc_labels|tojson }};
+  const vincValues = {{ vinc_values|tojson }};
+
+  const escalaLabels = {{ escala_labels|tojson }};
+  const escalaValues = {{ escala_values|tojson }};
+
+  new Chart(document.getElementById("chartSetor"), {
+    type: "bar",
+    data: { labels: setoresLabels, datasets: [{ label: "Qtd", data: setoresValues }] },
+    options: { responsive:true, plugins:{ legend:{ display:false } } }
+  });
+
+  new Chart(document.getElementById("chartCargo"), {
+    type: "bar",
+    data: { labels: cargosLabels, datasets: [{ label: "Qtd", data: cargosValues }] },
+    options: { responsive:true, plugins:{ legend:{ display:false } } }
+  });
+
+  new Chart(document.getElementById("chartVinculo"), {
+    type: "pie",
+    data: { labels: vincLabels, datasets: [{ data: vincValues }] },
+    options: { responsive:true }
+  });
+
+  new Chart(document.getElementById("chartEscala"), {
+    type: "doughnut",
+    data: { labels: escalaLabels, datasets: [{ data: escalaValues }] },
+    options: { responsive:true }
+  });
+</script>
+{% endblock %}

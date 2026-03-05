@@ -882,6 +882,75 @@ def admin_dashboard():
     )
 
 # ==================================================
+# ADMIN - GRÁFICOS (RELATÓRIOS)
+# ==================================================
+@app.route("/admin/graficos")
+@login_required
+@direcao_required
+def admin_graficos():
+    # 1) Funcionários por setor (só ativos)
+    por_setor = (
+        db.session.query(Funcionario.setor, db.func.count(Funcionario.id))
+        .filter(Funcionario.status == "Ativo")
+        .group_by(Funcionario.setor)
+        .all()
+    )
+
+    setores_labels = [s[0] or "SEM SETOR" for s in por_setor]
+    setores_values = [int(s[1]) for s in por_setor]
+
+    # 2) Funcionários por cargo (só ativos)
+    por_cargo = (
+        db.session.query(Funcionario.cargo, db.func.count(Funcionario.id))
+        .filter(Funcionario.status == "Ativo")
+        .group_by(Funcionario.cargo)
+        .all()
+    )
+
+    cargos_labels = [c[0] or "SEM CARGO" for c in por_cargo]
+    cargos_values = [int(c[1]) for c in por_cargo]
+
+    # 3) Funcionários por vínculo (só ativos)
+    por_vinculo = (
+        db.session.query(Funcionario.tipo_vinculo, db.func.count(Funcionario.id))
+        .filter(Funcionario.status == "Ativo")
+        .group_by(Funcionario.tipo_vinculo)
+        .all()
+    )
+
+    vinc_labels = [v[0] or "SEM VÍNCULO" for v in por_vinculo]
+    vinc_values = [int(v[1]) for v in por_vinculo]
+
+    # 4) Itens de escala por tipo (mês mais recente)
+    escala = EscalaMes.query.order_by(EscalaMes.ano.desc(), EscalaMes.mes.desc()).first()
+    escala_labels = []
+    escala_values = []
+    escala_titulo = "Sem escalas geradas ainda"
+
+    if escala:
+        escala_titulo = f"Itens da escala — {escala.mes:02d}/{escala.ano} — {escala.setor or 'TODOS'}"
+        por_tipo = (
+            db.session.query(EscalaItem.tipo, db.func.count(EscalaItem.id))
+            .filter(EscalaItem.escala_mes_id == escala.id)
+            .group_by(EscalaItem.tipo)
+            .all()
+        )
+        escala_labels = [t[0] or "-" for t in por_tipo]
+        escala_values = [int(t[1]) for t in por_tipo]
+
+    return render_template(
+        "admin/graficos.html",
+        setores_labels=setores_labels,
+        setores_values=setores_values,
+        cargos_labels=cargos_labels,
+        cargos_values=cargos_values,
+        vinc_labels=vinc_labels,
+        vinc_values=vinc_values,
+        escala_labels=escala_labels,
+        escala_values=escala_values,
+        escala_titulo=escala_titulo
+    )
+# ==================================================
 # ADMIN - FUNCIONÁRIOS
 # ==================================================
 

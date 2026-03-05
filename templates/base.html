@@ -67,6 +67,8 @@
 <a class="nav-item {% if request.path.startswith('/admin/relatorios') %}active{% endif %}"
    href="/admin/relatorios">📊 Relatórios</a>
 
+<a href="{{ url_for('admin_graficos') }}">📊 Gráficos</a>
+
 <a class="nav-item {% if request.path.startswith('/admin/pedidos-materiais') %}active{% endif %}"
    href="/admin/pedidos-materiais">📦 Pedidos de Materiais</a>
 
