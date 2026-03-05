@@ -1,136 +1,135 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Sistema{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
 
-<!-- TOPBAR -->
-<header class="topbar">
+  <!-- TOPBAR -->
+  <header class="topbar">
     <div class="topbar-left">
-        <div class="brand">Hospital Municipal da Mulher</div>
-        <div class="subtitle">{% block subtitle %}{% endblock %}</div>
+      <div class="brand">Hospital Municipal da Mulher</div>
+      <div class="subtitle">{% block subtitle %}{% endblock %}</div>
     </div>
 
     <div class="topbar-right">
-        {% if user %}
-            <span class="user-pill">
-                {{ user.nome }} • {{ user.funcao }}
-            </span>
-            <a class="btn-top" href="/logout">Sair</a>
-        {% endif %}
+      {% if user %}
+        <span class="user-pill">
+          {{ user.nome }} • {{ user.funcao }}
+        </span>
+        <a class="btn-top" href="{{ url_for('logout') }}">Sair</a>
+      {% endif %}
     </div>
-</header>
+  </header>
 
-<!-- LAYOUT -->
-<div class="app-shell">
+  <!-- LAYOUT -->
+  <div class="app-shell">
 
-<!-- SIDEBAR -->
-<aside class="sidebar-menu">
-<div class="sidebar-title">Menu</div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar-menu">
+      <div class="sidebar-title">Menu</div>
 
-{% if user %}
+      {% if user %}
 
-<!-- ================================================= -->
-<!-- DIREÇÃO -->
-<!-- ================================================= -->
-{% if user.funcao == "Direção" %}
+        <!-- ================================================= -->
+        <!-- DIREÇÃO -->
+        <!-- ================================================= -->
+        {% if user.funcao == "Direção" %}
 
-<a class="nav-item {% if request.path == '/admin' %}active{% endif %}"
-   href="/admin">🏠 Painel da Direção</a>
+          <a class="nav-item {% if request.path == url_for('admin_dashboard') %}active{% endif %}"
+             href="{{ url_for('admin_dashboard') }}">🏠 Painel da Direção</a>
 
-<a class="nav-item {% if request.path.startswith('/admin/funcionarios') %}active{% endif %}"
-   href="/admin/funcionarios">👥 Funcionários</a>
+          <a class="nav-item {% if request.path.startswith('/admin/funcionarios') %}active{% endif %}"
+             href="{{ url_for('admin_funcionarios') }}">👥 Funcionários</a>
 
-<a class="nav-item {% if request.path.startswith('/admin/importar-funcionarios') %}active{% endif %}"
-   href="/admin/importar-funcionarios">📥 Importar Funcionários</a>
+          <a class="nav-item {% if request.path.startswith('/admin/importar-funcionarios') %}active{% endif %}"
+             href="{{ url_for('importar_funcionarios') }}">📥 Importar Funcionários</a>
 
-<a class="nav-item {% if request.path.startswith('/admin/cursos') %}active{% endif %}"
-   href="/admin/cursos">📚 Cursos</a>
+          <a class="nav-item {% if request.path.startswith('/admin/cursos') %}active{% endif %}"
+             href="{{ url_for('admin_cursos') }}">📚 Cursos</a>
 
-<a class="nav-item {% if request.path.startswith('/admin/setores') %}active{% endif %}"
-   href="/admin/setores">🏥 Setores</a>
+          <a class="nav-item {% if request.path.startswith('/admin/setores') %}active{% endif %}"
+             href="{{ url_for('admin_setores') }}">🏥 Setores</a>
 
-<!-- ✅ ESCALAS ADMIN (active corrigido) -->
-<a class="nav-item {% if request.path.startswith('/admin/escalas') %}active{% endif %}"
-   href="/admin/escalas">📅 Escalas</a>
+          <!-- ✅ ESCALAS ADMIN -->
+          <a class="nav-item {% if request.path.startswith('/admin/escalas') %}active{% endif %}"
+             href="{{ url_for('admin_escalas') }}">📅 Escalas</a>
 
-<a class="nav-item {% if request.path.startswith('/admin/comunicados') %}active{% endif %}"
-   href="/admin/comunicados">📢 Comunicados</a>
+          <a class="nav-item {% if request.path.startswith('/admin/comunicados') %}active{% endif %}"
+             href="{{ url_for('admin_comunicados') }}">📢 Comunicados</a>
 
-<a class="nav-item {% if request.path.startswith('/admin/certificados') %}active{% endif %}"
-   href="/admin/certificados">📄 Certificados</a>
+          <a class="nav-item {% if request.path.startswith('/admin/certificados') %}active{% endif %}"
+             href="{{ url_for('admin_certificados') }}">📄 Certificados</a>
 
-<a class="nav-item {% if request.path.startswith('/admin/relatorios') %}active{% endif %}"
-   href="/admin/relatorios">📊 Relatórios</a>
+          <a class="nav-item {% if request.path.startswith('/admin/relatorios') %}active{% endif %}"
+             href="{{ url_for('admin_relatorios') }}">📊 Relatórios</a>
 
-<!-- ✅ GRÁFICOS PADRONIZADO (igual aos outros) -->
-<a class="nav-item {% if request.path.startswith('/admin/graficos') %}active{% endif %}"
-   href="{{ url_for('admin_graficos') }}">📈 Gráficos</a>
+          <!-- ✅ GRÁFICOS PADRONIZADO -->
+          <a class="nav-item {% if request.path.startswith('/admin/graficos') %}active{% endif %}"
+             href="{{ url_for('admin_graficos') }}">📈 Gráficos</a>
 
-<a class="nav-item {% if request.path.startswith('/admin/pedidos-materiais') %}active{% endif %}"
-   href="/admin/pedidos-materiais">📦 Pedidos de Materiais</a>
+          <a class="nav-item {% if request.path.startswith('/admin/pedidos-materiais') %}active{% endif %}"
+             href="{{ url_for('admin_pedidos_materiais') }}">📦 Pedidos de Materiais</a>
 
-<div class="nav-divider"></div>
+          <div class="nav-divider"></div>
 
-<a class="nav-item {% if request.path.startswith('/chat') %}active{% endif %}"
-   href="/chat">💬 Chat</a>
+          <a class="nav-item {% if request.path.startswith('/chat') %}active{% endif %}"
+             href="{{ url_for('chat') }}">💬 Chat</a>
 
-<!-- ================================================= -->
-<!-- FUNCIONÁRIO -->
-<!-- ================================================= -->
-{% elif user.funcao == "Funcionário" %}
+        <!-- ================================================= -->
+        <!-- FUNCIONÁRIO -->
+        <!-- ================================================= -->
+        {% elif user.funcao == "Funcionário" %}
 
-<a class="nav-item {% if request.path == '/dashboard' %}active{% endif %}"
-   href="/dashboard">🏠 Meu Dashboard</a>
+          <a class="nav-item {% if request.path == url_for('dashboard') %}active{% endif %}"
+             href="{{ url_for('dashboard') }}">🏠 Meu Dashboard</a>
 
-<a class="nav-item {% if request.path.startswith('/meu-perfil') %}active{% endif %}"
-   href="/meu-perfil">👤 Meu Perfil</a>
+          <a class="nav-item {% if request.path.startswith('/meu-perfil') %}active{% endif %}"
+             href="{{ url_for('meu_perfil') }}">👤 Meu Perfil</a>
 
-<!-- ✅ NOVO MENU ESCALAS (VISUALIZAÇÃO) - active corrigido -->
-<a class="nav-item {% if request.path.startswith('/escalas') and not request.path.startswith('/admin') %}active{% endif %}"
-   href="{{ url_for('escalas_view') }}">
-   📅 Escalas
-</a>
+          <!-- ✅ ESCALAS (VISUALIZAÇÃO) -->
+          <a class="nav-item {% if request.path.startswith('/escalas') and not request.path.startswith('/admin') %}active{% endif %}"
+             href="{{ url_for('escalas_view') }}">📅 Escalas</a>
 
-<a class="nav-item {% if request.path.startswith('/meus-cursos') %}active{% endif %}"
-   href="/meus-cursos">📚 Meus Cursos</a>
+          <a class="nav-item {% if request.path.startswith('/meus-cursos') %}active{% endif %}"
+             href="{{ url_for('meus_cursos') }}">📚 Meus Cursos</a>
 
-<a class="nav-item {% if request.path.startswith('/meu-progresso') %}active{% endif %}"
-   href="/meu-progresso">✅ Meu Progresso</a>
+          <a class="nav-item {% if request.path.startswith('/meu-progresso') %}active{% endif %}"
+             href="{{ url_for('meu_progresso') }}">✅ Meu Progresso</a>
 
-<a class="nav-item {% if request.path.startswith('/meus-certificados') %}active{% endif %}"
-   href="/meus-certificados">📄 Meus Certificados</a>
+          <a class="nav-item {% if request.path.startswith('/meus-certificados') %}active{% endif %}"
+             href="{{ url_for('meus_certificados') }}">📄 Meus Certificados</a>
 
-<a class="nav-item {% if request.path.startswith('/comunicados') %}active{% endif %}"
-   href="/comunicados">📢 Comunicados</a>
+          <a class="nav-item {% if request.path.startswith('/comunicados') %}active{% endif %}"
+             href="{{ url_for('comunicados') }}">📢 Comunicados</a>
 
-<a class="nav-item {% if request.path.startswith('/pedido-materiais') %}active{% endif %}"
-   href="/pedido-materiais">📦 Pedido de Material</a>
+          <a class="nav-item {% if request.path.startswith('/pedido-materiais') %}active{% endif %}"
+             href="{{ url_for('pedido_materiais') }}">📦 Pedido de Material</a>
 
-<a class="nav-item {% if request.path.startswith('/chat') %}active{% endif %}"
-   href="/chat">💬 Chat</a>
+          <a class="nav-item {% if request.path.startswith('/chat') %}active{% endif %}"
+             href="{{ url_for('chat') }}">💬 Chat</a>
 
-<a class="nav-item {% if request.path.startswith('/alterar-senha') %}active{% endif %}"
-   href="/alterar-senha">🔑 Alterar Senha</a>
+          <a class="nav-item {% if request.path.startswith('/alterar-senha') %}active{% endif %}"
+             href="{{ url_for('alterar_senha') }}">🔑 Alterar Senha</a>
 
-{% endif %}
+        {% endif %}
 
-{% else %}
-<a class="nav-item" href="/login">🔐 Login</a>
-{% endif %}
+      {% else %}
+        <a class="nav-item {% if request.path.startswith('/login') %}active{% endif %}"
+           href="{{ url_for('login') }}">🔐 Login</a>
+      {% endif %}
 
-</aside>
+    </aside>
 
-<!-- CONTEÚDO -->
-<main class="main-content">
-{% block content %}{% endblock %}
-</main>
+    <!-- CONTEÚDO -->
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
 
-</div>
+  </div>
 
 </body>
 </html>

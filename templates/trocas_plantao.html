@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Troca de Plantão{% endblock %}
+
+{% block content %}
+<h1>🔁 Troca de Plantão</h1>
+
+<div class="card" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+  <a class="btn-outline" href="{{ url_for('trocas_plantao_nova') }}">➕ Nova solicitação</a>
+</div>
+
+<div class="card">
+  {% if trocas %}
+    <table class="table">
+      <tr>
+        <th>Data</th>
+        <th>Solicitante</th>
+        <th>Substituto</th>
+        <th>Status</th>
+        <th>Ação</th>
+      </tr>
+      {% for t in trocas %}
+      <tr>
+        <td>{{ t.data.strftime("%d/%m/%Y") }}</td>
+        <td>{{ (fmap.get(t.solicitante_id).nome if fmap.get(t.solicitante_id) else "-") }}</td>
+        <td>{{ (fmap.get(t.substituto_id).nome if fmap.get(t.substituto_id) else "-") }}</td>
+        <td><strong>{{ t.status }}</strong></td>
+        <td>
+          {% if t.status == "PENDENTE" and t.solicitante_id == user.id %}
+            <form method="post" action="{{ url_for('trocas_plantao_cancelar', troca_id=t.id) }}"
+                  onsubmit="return confirm('Cancelar esta solicitação?');" style="margin:0;">
+              <button class="btn-danger" type="submit" style="border:0; padding:6px 10px; border-radius:8px; cursor:pointer;">
+                ❌ Cancelar
+              </button>
+            </form>
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>Nenhuma solicitação ainda.</p>
+  {% endif %}
+</div>
+{% endblock %}

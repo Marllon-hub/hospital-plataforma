@@ -13,7 +13,7 @@ try:
 except Exception:
     qrcode = None
 
-from models import db, Funcionario, Mensagem, EscalaMes, EscalaItem  # <-- garanta que existem no models.py
+from models import db, Funcionario, Mensagem, EscalaMes, EscalaItem, TrocaPlantao  # <-- garanta que existem no models.py
 
 # PDF
 from reportlab.lib.pagesizes import A4, landscape
@@ -325,25 +325,27 @@ def escalas_view():
     return redirect(url_for("minha_escala"))
 
 #==================================================
-#ESCALAS 2
+# EXCLUIR ESCALA
 #==================================================
 @app.route("/admin/escalas/<int:escala_mes_id>/excluir", methods=["POST"])
 @login_required
 @direcao_required
 def admin_excluir_escala(escala_mes_id):
+
     escala = EscalaMes.query.get_or_404(escala_mes_id)
 
     try:
-        db.session.delete(escala)  # cascade apaga os itens (EscalaItem) por causa do seu relacionamento
+        db.session.delete(escala)
         db.session.commit()
+
         flash("✅ Escala excluída com sucesso!", "success")
+
     except Exception as e:
         db.session.rollback()
         print("❌ Erro ao excluir escala:", e)
         flash("❌ Erro ao excluir a escala.", "danger")
 
     return redirect(url_for("admin_escalas"))
-
 #===================================================
 #MONTAR EQUIPES
 #===================================================
@@ -426,6 +428,273 @@ def admin_excluir_comunicado(comunicado_id):
 
     flash("✅ Comunicado excluído com sucesso!", "success")
     return redirect(url_for("admin_comunicados"))
+
+# ==================================================
+# TROCA DE PLANTÃO (FUNCIONÁRIO + DIREÇÃO)
+# ==================================================
+
+def _get_escala_mes_by_date(data_ref: date, setor: str | None = None):
+    # tenta achar escala do mesmo mês/ano e setor (se informado)
+    q = EscalaMes.query.filter_by(ano=data_ref.year, mes=data_ref.month)
+    if setor:
+        q = q.filter(EscalaMes.setor == setor)
+    return q.order_by(EscalaMes.id.desc()).first()
+
+def _get_item_do_dia(escala_mes_id: int, funcionario_id: int, d: date):
+    inicio_dia = datetime.combine(d, time(0, 0))
+    fim_dia = inicio_dia + timedelta(days=1)
+
+    return (
+        EscalaItem.query
+        .filter(EscalaItem.escala_mes_id == escala_mes_id)
+        .filter(EscalaItem.funcionario_id == funcionario_id)
+        .filter(EscalaItem.inicio >= inicio_dia)
+        .filter(EscalaItem.inicio < fim_dia)
+        .first()
+    )
+
+def _criar_item_padrao(escala_mes_id: int, funcionario_id: int, d: date, tipo="FOLGA"):
+    # padrão seguro: cria folga no dia
+    ini = datetime.combine(d, time(0, 0))
+    fim = datetime.combine(d, time(23, 59))
+    if tipo == "EXPEDIENTE":
+        ini = datetime.combine(d, time(8, 0))
+        fim = datetime.combine(d, time(17, 0))
+    elif tipo == "PLANTAO_24H":
+        ini = datetime.combine(d, time(7, 0))
+        fim = ini + timedelta(hours=24)
+
+    it = EscalaItem(
+        escala_mes_id=escala_mes_id,
+        funcionario_id=funcionario_id,
+        inicio=ini,
+        fim=fim,
+        tipo=tipo,
+        observacao=None
+    )
+    db.session.add(it)
+    return it
+
+def _swap_items(item_a: EscalaItem, item_b: EscalaItem):
+    # troca tipo + horários (inicio/fim)
+    a_tipo, a_ini, a_fim = item_a.tipo, item_a.inicio, item_a.fim
+    item_a.tipo, item_a.inicio, item_a.fim = item_b.tipo, item_b.inicio, item_b.fim
+    item_b.tipo, item_b.inicio, item_b.fim = a_tipo, a_ini, a_fim
+
+
+# -------------------------
+# Funcionário: listar trocas
+# -------------------------
+@app.route("/trocas-plantao")
+@login_required
+@funcionario_required
+def trocas_plantao():
+    uid = session["user_id"]
+
+    trocas = (
+        TrocaPlantao.query
+        .filter((TrocaPlantao.solicitante_id == uid) | (TrocaPlantao.substituto_id == uid))
+        .order_by(TrocaPlantao.criado_em.desc())
+        .all()
+    )
+
+    # mapa id->nome
+    ids = set()
+    for t in trocas:
+        ids.add(t.solicitante_id)
+        ids.add(t.substituto_id)
+        if t.decidido_por_id:
+            ids.add(t.decidido_por_id)
+
+    funcs = Funcionario.query.filter(Funcionario.id.in_(list(ids))).all() if ids else []
+    fmap = {f.id: f for f in funcs}
+
+    return render_template("trocas_plantao.html", trocas=trocas, fmap=fmap)
+
+
+# -------------------------
+# Funcionário: criar troca
+# -------------------------
+@app.route("/trocas-plantao/nova", methods=["GET", "POST"])
+@login_required
+@funcionario_required
+def trocas_plantao_nova():
+    uid = session["user_id"]
+    user = Funcionario.query.get(uid)
+
+    # lista de possíveis substitutos (ativos e diferentes do solicitante)
+    substitutos = (
+        Funcionario.query
+        .filter(Funcionario.status == "Ativo", Funcionario.id != uid)
+        .order_by(Funcionario.nome)
+        .all()
+    )
+
+    if request.method == "POST":
+        substituto_id = int(request.form.get("substituto_id"))
+        data_str = (request.form.get("data") or "").strip()
+        motivo = (request.form.get("motivo") or "").strip()
+
+        d = parse_date_yyyy_mm_dd(data_str)
+        if not d:
+            flash("❌ Data inválida.", "danger")
+            return redirect(url_for("trocas_plantao_nova"))
+
+        # tenta achar escala do mês (mesmo setor do solicitante, se existir)
+        escala = _get_escala_mes_by_date(d, setor=(user.setor if user else None))
+        escala_mes_id = escala.id if escala else None
+
+        nova = TrocaPlantao(
+            escala_mes_id=escala_mes_id,
+            solicitante_id=uid,
+            substituto_id=substituto_id,
+            data=d,
+            motivo=motivo or None,
+            status="PENDENTE"
+        )
+        db.session.add(nova)
+        db.session.commit()
+
+        flash("✅ Solicitação de troca enviada para a Direção.", "success")
+        return redirect(url_for("trocas_plantao"))
+
+    return render_template("troca_plantao_nova.html", substitutos=substitutos)
+
+
+# -------------------------
+# Funcionário: cancelar (só se pendente)
+# -------------------------
+@app.route("/trocas-plantao/<int:troca_id>/cancelar", methods=["POST"])
+@login_required
+@funcionario_required
+def trocas_plantao_cancelar(troca_id):
+    uid = session["user_id"]
+    t = TrocaPlantao.query.get_or_404(troca_id)
+
+    if t.status != "PENDENTE":
+        flash("❌ Só é possível cancelar quando estiver PENDENTE.", "danger")
+        return redirect(url_for("trocas_plantao"))
+
+    if t.solicitante_id != uid:
+        flash("❌ Você não pode cancelar uma solicitação de outra pessoa.", "danger")
+        return redirect(url_for("trocas_plantao"))
+
+    t.status = "CANCELADA"
+    t.decidido_em = datetime.utcnow()
+    db.session.commit()
+
+    flash("✅ Solicitação cancelada.", "success")
+    return redirect(url_for("trocas_plantao"))
+
+
+# -------------------------
+# Direção: listar pendentes
+# -------------------------
+@app.route("/admin/trocas-plantao")
+@login_required
+@direcao_required
+def admin_trocas_plantao():
+    status = (request.args.get("status") or "PENDENTE").upper().strip()
+
+    q = TrocaPlantao.query
+    if status:
+        q = q.filter(TrocaPlantao.status == status)
+
+    trocas = q.order_by(TrocaPlantao.criado_em.desc()).all()
+
+    ids = set()
+    escala_ids = set()
+    for t in trocas:
+        ids.add(t.solicitante_id)
+        ids.add(t.substituto_id)
+        if t.decidido_por_id:
+            ids.add(t.decidido_por_id)
+        if t.escala_mes_id:
+            escala_ids.add(t.escala_mes_id)
+
+    funcs = Funcionario.query.filter(Funcionario.id.in_(list(ids))).all() if ids else []
+    fmap = {f.id: f for f in funcs}
+
+    escalas = EscalaMes.query.filter(EscalaMes.id.in_(list(escala_ids))).all() if escala_ids else []
+    emap = {e.id: e for e in escalas}
+
+    return render_template("admin/trocas_plantao_admin.html", trocas=trocas, fmap=fmap, emap=emap, status=status)
+
+
+# -------------------------
+# Direção: aprovar (troca na escala)
+# -------------------------
+@app.route("/admin/trocas-plantao/<int:troca_id>/aprovar", methods=["POST"])
+@login_required
+@direcao_required
+def admin_trocas_plantao_aprovar(troca_id):
+    t = TrocaPlantao.query.get_or_404(troca_id)
+
+    if t.status != "PENDENTE":
+        flash("❌ Essa solicitação não está mais pendente.", "danger")
+        return redirect(url_for("admin_trocas_plantao"))
+
+    obs = (request.form.get("observacao") or "").strip()
+
+    # precisa de escala para efetivar a troca
+    if not t.escala_mes_id:
+        flash("❌ Não foi encontrada uma escala para esse mês. Gere a escala primeiro.", "danger")
+        return redirect(url_for("admin_trocas_plantao"))
+
+    try:
+        # pega/garante itens do dia para ambos
+        item_a = _get_item_do_dia(t.escala_mes_id, t.solicitante_id, t.data)
+        item_b = _get_item_do_dia(t.escala_mes_id, t.substituto_id, t.data)
+
+        if not item_a:
+            item_a = _criar_item_padrao(t.escala_mes_id, t.solicitante_id, t.data, tipo="FOLGA")
+        if not item_b:
+            item_b = _criar_item_padrao(t.escala_mes_id, t.substituto_id, t.data, tipo="FOLGA")
+
+        # troca efetivamente
+        _swap_items(item_a, item_b)
+
+        # marca como aprovada
+        t.status = "APROVADA"
+        t.decidido_em = datetime.utcnow()
+        t.decidido_por_id = session.get("user_id")
+        t.observacao_direcao = obs or None
+
+        db.session.commit()
+        flash("✅ Troca aprovada e aplicada na escala.", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        print("❌ Erro ao aprovar troca:", e)
+        flash("❌ Erro ao aprovar troca. Verifique os logs.", "danger")
+
+    return redirect(url_for("admin_trocas_plantao"))
+
+
+# -------------------------
+# Direção: recusar
+# -------------------------
+@app.route("/admin/trocas-plantao/<int:troca_id>/recusar", methods=["POST"])
+@login_required
+@direcao_required
+def admin_trocas_plantao_recusar(troca_id):
+    t = TrocaPlantao.query.get_or_404(troca_id)
+
+    if t.status != "PENDENTE":
+        flash("❌ Essa solicitação não está mais pendente.", "danger")
+        return redirect(url_for("admin_trocas_plantao"))
+
+    obs = (request.form.get("observacao") or "").strip()
+
+    t.status = "RECUSADA"
+    t.decidido_em = datetime.utcnow()
+    t.decidido_por_id = session.get("user_id")
+    t.observacao_direcao = obs or None
+
+    db.session.commit()
+    flash("✅ Solicitação recusada.", "success")
+    return redirect(url_for("admin_trocas_plantao"))
+
 #===================================================
 #ESCALA PDF
 #===================================================

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Nova troca de plantão{% endblock %}
+
+{% block content %}
+<h1>➕ Nova solicitação</h1>
+
+<div class="card">
+  <form method="post" style="display:flex; gap:14px; flex-wrap:wrap; align-items:end;">
+    <div>
+      <label>Data</label><br>
+      <input type="date" name="data" required style="width:220px;">
+    </div>
+
+    <div>
+      <label>Trocar com</label><br>
+      <select name="substituto_id" required style="width:360px;">
+        <option value="" disabled selected>Selecione</option>
+        {% for f in substitutos %}
+          <option value="{{ f.id }}">{{ f.nome }} {% if f.setor %}— {{ f.setor }}{% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex:1; min-width:260px;">
+      <label>Motivo (opcional)</label><br>
+      <input type="text" name="motivo" maxlength="255" placeholder="Ex: consulta / compromisso"
+             style="width:100%;">
+    </div>
+
+    <div>
+      <button class="btn" type="submit">📨 Enviar</button>
+      <a class="btn-outline" href="{{ url_for('trocas_plantao') }}">← Voltar</a>
+    </div>
+  </form>
+
+  <p style="color:#666; margin-top:10px;">
+    A troca só é aplicada na escala após aprovação da Direção.
+  </p>
+</div>
+{% endblock %}

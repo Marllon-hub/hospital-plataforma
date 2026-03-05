@@ -26,8 +26,7 @@ class Funcionario(db.Model):
     setor = db.Column(db.String(80))
     cargo = db.Column(db.String(80))
 
-    # ✅ NOVO: equipe (para separar a escala igual ao Excel)
-    # Ex.: "EQUIPE 1", "EQUIPE 2", "EQUIPE 3"...
+    # ✅ equipe (para separar a escala igual ao Excel)
     equipe = db.Column(db.String(50), nullable=True)
 
     data_admissao = db.Column(db.String(20))
@@ -40,7 +39,7 @@ class Funcionario(db.Model):
     observacoes = db.Column(db.Text)
 
     # =========================
-    # ESCALA (NOVO)
+    # ESCALA
     # =========================
     # "PLANTONISTA_24_96" ou "SEG_SEX"
     escala_tipo = db.Column(db.String(30), default="SEG_SEX", nullable=False)
@@ -70,6 +69,26 @@ class Funcionario(db.Model):
         backref="destinatario",
         lazy=True,
         cascade="all, delete-orphan"
+    )
+
+    # ✅ Troca de plantão (relacionamentos)
+    trocas_solicitadas = db.relationship(
+        "TrocaPlantao",
+        foreign_keys="TrocaPlantao.solicitante_id",
+        backref="solicitante",
+        lazy=True
+    )
+    trocas_como_substituto = db.relationship(
+        "TrocaPlantao",
+        foreign_keys="TrocaPlantao.substituto_id",
+        backref="substituto",
+        lazy=True
+    )
+    trocas_decididas = db.relationship(
+        "TrocaPlantao",
+        foreign_keys="TrocaPlantao.decidido_por_id",
+        backref="decidido_por",
+        lazy=True
     )
 
 
@@ -107,7 +126,7 @@ class Mensagem(db.Model):
 
 
 # ==================================================
-# ESCALA DO MÊS (NOVO)
+# ESCALA DO MÊS
 # ==================================================
 class EscalaMes(db.Model):
     __tablename__ = "escala_mes"
@@ -132,6 +151,13 @@ class EscalaMes(db.Model):
         cascade="all, delete-orphan"
     )
 
+    # ✅ Trocas associadas a esta escala (se tiver)
+    trocas = db.relationship(
+        "TrocaPlantao",
+        backref="escala_mes",
+        lazy=True
+    )
+
     __table_args__ = (
         db.UniqueConstraint("ano", "mes", "setor", name="uq_escala_mes_ano_mes_setor"),
         db.Index("ix_escala_mes_ano_mes_setor", "ano", "mes", "setor"),
@@ -139,7 +165,7 @@ class EscalaMes(db.Model):
 
 
 # ==================================================
-# ITENS DA ESCALA (NOVO)
+# ITENS DA ESCALA
 # ==================================================
 class EscalaItem(db.Model):
     __tablename__ = "escala_item"
@@ -168,4 +194,60 @@ class EscalaItem(db.Model):
     __table_args__ = (
         db.Index("ix_escala_item_mes_func", "escala_mes_id", "funcionario_id"),
         db.Index("ix_escala_item_mes_tipo", "escala_mes_id", "tipo"),
+    )
+
+
+# ==================================================
+# ✅ TROCA DE PLANTÃO (NOVO)
+# ==================================================
+class TrocaPlantao(db.Model):
+    __tablename__ = "troca_plantao"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # escala referência (para saber mês/ano/setor e aplicar troca)
+    escala_mes_id = db.Column(
+        db.Integer,
+        db.ForeignKey("escala_mes.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+
+    # quem pediu
+    solicitante_id = db.Column(
+        db.Integer,
+        db.ForeignKey("funcionario.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    # com quem vai trocar
+    substituto_id = db.Column(
+        db.Integer,
+        db.ForeignKey("funcionario.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    # dia da troca
+    data = db.Column(db.Date, nullable=False, index=True)
+
+    motivo = db.Column(db.String(255), nullable=True)
+
+    # PENDENTE / APROVADA / RECUSADA / CANCELADA
+    status = db.Column(db.String(20), nullable=False, default="PENDENTE", index=True)
+
+    criado_em = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    decidido_em = db.Column(db.DateTime, nullable=True)
+    decidido_por_id = db.Column(
+        db.Integer,
+        db.ForeignKey("funcionario.id", ondelete="SET NULL"),
+        nullable=True
+    )
+
+    observacao_direcao = db.Column(db.String(255), nullable=True)
+
+    __table_args__ = (
+        db.Index("ix_troca_data_status", "data", "status"),
     )

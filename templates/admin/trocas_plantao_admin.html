@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Trocas de Plantão{% endblock %}
+
+{% block content %}
+<h1>🔁 Trocas de Plantão (Direção)</h1>
+
+<div class="card" style="margin-bottom:16px; display:flex; gap:10px; flex-wrap:wrap;">
+  <a class="btn-outline" href="{{ url_for('admin_trocas_plantao', status='PENDENTE') }}">PENDENTES</a>
+  <a class="btn-outline" href="{{ url_for('admin_trocas_plantao', status='APROVADA') }}">APROVADAS</a>
+  <a class="btn-outline" href="{{ url_for('admin_trocas_plantao', status='RECUSADA') }}">RECUSADAS</a>
+  <a class="btn-outline" href="{{ url_for('admin_trocas_plantao', status='CANCELADA') }}">CANCELADAS</a>
+</div>
+
+<div class="card">
+  {% if trocas %}
+    <table class="table">
+      <tr>
+        <th>Data</th>
+        <th>Solicitante</th>
+        <th>Substituto</th>
+        <th>Escala</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+
+      {% for t in trocas %}
+      {% set esc = emap.get(t.escala_mes_id) %}
+      <tr>
+        <td>{{ t.data.strftime("%d/%m/%Y") }}</td>
+        <td>{{ (fmap.get(t.solicitante_id).nome if fmap.get(t.solicitante_id) else "-") }}</td>
+        <td>{{ (fmap.get(t.substituto_id).nome if fmap.get(t.substituto_id) else "-") }}</td>
+
+        <td>
+          {% if esc %}
+            {{ "%02d"|format(esc.mes) }}/{{ esc.ano }} — {{ esc.setor or "TODOS" }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+
+        <td><strong>{{ t.status }}</strong></td>
+
+        <td style="min-width:260px;">
+          {% if t.status == "PENDENTE" %}
+            <form method="post" action="{{ url_for('admin_trocas_plantao_aprovar', troca_id=t.id) }}"
+                  style="display:inline-flex; gap:6px; align-items:center; margin:0;"
+                  onsubmit="return confirm('Aprovar e aplicar na escala?');">
+              <input type="text" name="observacao" placeholder="Obs. (opcional)" style="width:160px;">
+              <button class="btn" type="submit">✅ Aprovar</button>
+            </form>
+
+            <form method="post" action="{{ url_for('admin_trocas_plantao_recusar', troca_id=t.id) }}"
+                  style="display:inline-flex; gap:6px; align-items:center; margin:6px 0 0 0;"
+                  onsubmit="return confirm('Recusar solicitação?');">
+              <input type="text" name="observacao" placeholder="Motivo (opcional)" style="width:160px;">
+              <button class="btn-danger" type="submit" style="border:0; padding:8px 10px; border-radius:10px; cursor:pointer;">
+                ❌ Recusar
+              </button>
+            </form>
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>Nenhuma solicitação neste status.</p>
+  {% endif %}
+</div>
+{% endblock %}
