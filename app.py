@@ -129,6 +129,27 @@ pedidos_materiais = []
 with app.app_context():
     db.create_all()
 
+    # ==================================================
+    # ✅ MIGRAÇÃO RÁPIDA SQLITE: adiciona coluna equipe se não existir
+    # ==================================================
+    try:
+        uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+        if uri.startswith("sqlite:"):
+            conn = db.engine.raw_connection()
+            cur = conn.cursor()
+            cur.execute("PRAGMA table_info(funcionario);")
+            cols = [row[1] for row in cur.fetchall()]  # row[1] = nome da coluna
+
+            if "equipe" not in cols:
+                cur.execute("ALTER TABLE funcionario ADD COLUMN equipe VARCHAR(50);")
+                conn.commit()
+                print("✅ Coluna 'equipe' criada na tabela funcionario (SQLite).")
+
+            cur.close()
+            conn.close()
+    except Exception as e:
+        print("⚠️ Falha ao aplicar migração rápida (equipe):", e)
+
     # ✅ cria usuários padrão somente se ainda não existirem
     if not Funcionario.query.filter_by(cpf="12345678900").first():
         db.session.add(Funcionario(
