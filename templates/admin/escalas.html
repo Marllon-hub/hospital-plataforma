@@ -85,7 +85,7 @@
         <th>Mês</th>
         <th>Setor</th>
         <th>Criado em</th>
-        <th>Ação</th>
+        <th>Ações</th>
       </tr>
 
       {% for e in escalas %}
@@ -94,26 +94,21 @@
         <td>{{ e.setor or "Todos" }}</td>
         <td>{{ e.criado_em.strftime("%d/%m/%Y %H:%M") if e.criado_em else "-" }}</td>
 
-        <td style="display:flex; gap:10px; align-items:center;">
-          <a href="{{ url_for('admin_escala_mes', escala_mes_id=e.id) }}">
+        <td style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <a class="btn-outline"
+             href="{{ url_for('admin_escala_mes', escala_mes_id=e.id) }}"
+             style="padding:6px 10px; border-radius:8px; text-decoration:none;">
             🔎 Abrir
           </a>
 
-          <!-- ✅ EXCLUIR: agora aponta para um endpoint que EXISTE (admin_escalas) -->
+          <!-- ✅ EXCLUIR (CORRETO): aponta para a rota POST /admin/escalas/<id>/excluir -->
           <form method="post"
-                action="{{ url_for('admin_escalas') }}"
-                onsubmit="return confirm('Deseja excluir a escala {{ '%02d'|format(e.mes) }}/{{ e.ano }}?');"
+                action="{{ url_for('admin_excluir_escala', escala_mes_id=e.id) }}"
+                onsubmit="return confirm('Deseja excluir a escala {{ '%02d'|format(e.mes) }}/{{ e.ano }}? Isso apagará todos os itens do mês.');"
                 style="margin:0;">
-            <input type="hidden" name="acao" value="excluir">
-            <input type="hidden" name="escala_mes_id" value="{{ e.id }}">
-
             <button type="submit"
-                    style="background:#d9534f;
-                           color:white;
-                           border:0;
-                           padding:6px 10px;
-                           border-radius:6px;
-                           cursor:pointer;">
+                    class="btn-danger"
+                    style="padding:6px 10px; border-radius:8px; border:0; cursor:pointer;">
               🗑 Excluir
             </button>
           </form>
