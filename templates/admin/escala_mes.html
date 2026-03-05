@@ -14,6 +14,13 @@
       <strong>Total de funcionários:</strong> {{ por_func|length if por_func else 0 }}
     </div>
 
+    {# ✅ NOVO: botão montar equipes #}
+    <a class="btn-outline"
+       href="{{ url_for('admin_escalas_equipes', escala_mes_id=escala.id) }}"
+       style="padding:8px 12px; border-radius:10px; text-decoration:none;">
+      👥 Montar equipes
+    </a>
+
     {# ✅ botão PDF #}
     <a class="btn-outline"
        href="{{ url_for('admin_escala_mes_pdf', escala_mes_id=escala.id) }}"
