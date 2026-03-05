@@ -14,7 +14,7 @@
       <strong>Total de funcionários:</strong> {{ por_func|length if por_func else 0 }}
     </div>
 
-    {# ✅ NOVO: botão montar equipes #}
+    {# ✅ botão montar equipes #}
     <a class="btn-outline"
        href="{{ url_for('admin_escalas_equipes', escala_mes_id=escala.id) }}"
        style="padding:8px 12px; border-radius:10px; text-decoration:none;">
@@ -71,24 +71,23 @@
 
   .legend{ display:flex; gap:16px; flex-wrap:wrap; margin-top: 14px; color:#666; font-size: 13px; align-items:center; }
 
+  /* linha de título da equipe (igual Excel) */
+  .team-row td{
+    background:#0b5d73;
+    color:#fff;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    padding:10px 12px;
+    text-align:left;
+  }
+
   /* fallback caso você não tenha .btn-danger no CSS global */
   .btn-danger{ background:#dc3545; color:#fff; }
   .btn-danger:hover{ filter: brightness(.95); }
 </style>
 
 {% if por_func %}
-
-  {# ===== Ordenação por nome ===== #}
-  {% set lista_ordenada = [] %}
-  {% for func_id in por_func.keys() %}
-    {% set f = func_map.get(func_id) %}
-    {% if f %}
-      {% set _ = lista_ordenada.append((f.nome|lower, func_id)) %}
-    {% else %}
-      {% set _ = lista_ordenada.append(("zzz", func_id)) %}
-    {% endif %}
-  {% endfor %}
-  {% set lista_ordenada = lista_ordenada|sort %}
 
   <div class="card cal-wrap">
     <table class="cal-table">
@@ -99,70 +98,85 @@
         {% endfor %}
       </tr>
 
-      {% for _, func_id in lista_ordenada %}
-        {% set itens = por_func.get(func_id) %}
-        {% set f = func_map.get(func_id) %}
+      {# ==================================================
+         ✅ AGORA EXIBE POR EQUIPE (igual Excel)
+         Cada equipe vira uma “faixa” com o SETOR
+      =================================================== #}
 
-        {# ===== Contadores por tipo ===== #}
-        {% set c_plantao = namespace(v=0) %}
-        {% set c_expediente = namespace(v=0) %}
-        {% set c_folga = namespace(v=0) %}
-        {% for it in itens %}
-          {% if it.tipo == "PLANTAO_24H" %}
-            {% set c_plantao.v = c_plantao.v + 1 %}
-          {% elif it.tipo == "EXPEDIENTE" %}
-            {% set c_expediente.v = c_expediente.v + 1 %}
-          {% elif it.tipo == "FOLGA" %}
-            {% set c_folga.v = c_folga.v + 1 %}
-          {% endif %}
+      {% for equipe, ids in por_equipe.items() %}
+
+        <tr class="team-row">
+          <td colspan="{{ 1 + (dias|length) }}">
+            {{ equipe }} — SETOR: {{ escala.setor or "TODOS" }}
+          </td>
+        </tr>
+
+        {% for func_id in ids %}
+          {% set itens = por_func.get(func_id) %}
+          {% set f = func_map.get(func_id) %}
+
+          {# ===== Contadores por tipo ===== #}
+          {% set c_plantao = namespace(v=0) %}
+          {% set c_expediente = namespace(v=0) %}
+          {% set c_folga = namespace(v=0) %}
+          {% for it in itens %}
+            {% if it.tipo == "PLANTAO_24H" %}
+              {% set c_plantao.v = c_plantao.v + 1 %}
+            {% elif it.tipo == "EXPEDIENTE" %}
+              {% set c_expediente.v = c_expediente.v + 1 %}
+            {% elif it.tipo == "FOLGA" %}
+              {% set c_folga.v = c_folga.v + 1 %}
+            {% endif %}
+          {% endfor %}
+
+          <tr>
+            <td class="sticky-col">
+              <span class="nome">👤 {{ f.nome if f else "Funcionário" }}</span>
+              <span class="meta">
+                {{ f.setor if f and f.setor else "-" }} |
+                {{ f.escala_tipo if f and f.escala_tipo else "-" }}
+                {% if f and f.plantao_base %} | Base: {{ f.plantao_base }}{% endif %}
+              </span>
+
+              <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+                <span class="badge b-plantao">24H: {{ c_plantao.v }}</span>
+                <span class="badge b-exp">EXP: {{ c_expediente.v }}</span>
+                <span class="badge b-folga">F: {{ c_folga.v }}</span>
+              </div>
+            </td>
+
+            {# ===== Grade mensal (clicável) ===== #}
+            {% for d in dias %}
+              {% set ns = namespace(status=None, obs=None) %}
+
+              {% for it in itens %}
+                {% set dia_item = it.inicio.strftime("%d")|int %}
+                {% if dia_item == d %}
+                  {% set ns.status = it.tipo %}
+                  {% set ns.obs = it.observacao %}
+                {% endif %}
+              {% endfor %}
+
+              <td title="Clique para editar | {{ ns.status or '-' }}{% if ns.obs %} — {{ ns.obs }}{% endif %}">
+                {% if ns.status == "PLANTAO_24H" %}
+                  <div class="cell tipo-PLANTAO_24H js-cell"
+                       data-func="{{ func_id }}" data-dia="{{ d }}" data-tipo="PLANTAO_24H">24H</div>
+                {% elif ns.status == "EXPEDIENTE" %}
+                  <div class="cell tipo-EXPEDIENTE js-cell"
+                       data-func="{{ func_id }}" data-dia="{{ d }}" data-tipo="EXPEDIENTE">EXP</div>
+                {% elif ns.status == "FOLGA" %}
+                  <div class="cell tipo-FOLGA js-cell"
+                       data-func="{{ func_id }}" data-dia="{{ d }}" data-tipo="FOLGA">F</div>
+                {% else %}
+                  <div class="cell js-cell"
+                       style="background:transparent; color:#999; font-weight:600;"
+                       data-func="{{ func_id }}" data-dia="{{ d }}" data-tipo="">-</div>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
         {% endfor %}
 
-        <tr>
-          <td class="sticky-col">
-            <span class="nome">👤 {{ f.nome if f else "Funcionário" }}</span>
-            <span class="meta">
-              {{ f.setor if f and f.setor else "-" }} |
-              {{ f.escala_tipo if f and f.escala_tipo else "-" }}
-              {% if f and f.plantao_base %} | Base: {{ f.plantao_base }}{% endif %}
-            </span>
-
-            <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
-              <span class="badge b-plantao">24H: {{ c_plantao.v }}</span>
-              <span class="badge b-exp">EXP: {{ c_expediente.v }}</span>
-              <span class="badge b-folga">F: {{ c_folga.v }}</span>
-            </div>
-          </td>
-
-          {# ===== Grade mensal (clicável) ===== #}
-          {% for d in dias %}
-            {% set ns = namespace(status=None, obs=None) %}
-
-            {% for it in itens %}
-              {% set dia_item = it.inicio.strftime("%d")|int %}
-              {% if dia_item == d %}
-                {% set ns.status = it.tipo %}
-                {% set ns.obs = it.observacao %}
-              {% endif %}
-            {% endfor %}
-
-            <td title="Clique para editar | {{ ns.status or '-' }}{% if ns.obs %} — {{ ns.obs }}{% endif %}">
-              {% if ns.status == "PLANTAO_24H" %}
-                <div class="cell tipo-PLANTAO_24H js-cell"
-                     data-func="{{ func_id }}" data-dia="{{ d }}" data-tipo="PLANTAO_24H">24H</div>
-              {% elif ns.status == "EXPEDIENTE" %}
-                <div class="cell tipo-EXPEDIENTE js-cell"
-                     data-func="{{ func_id }}" data-dia="{{ d }}" data-tipo="EXPEDIENTE">EXP</div>
-              {% elif ns.status == "FOLGA" %}
-                <div class="cell tipo-FOLGA js-cell"
-                     data-func="{{ func_id }}" data-dia="{{ d }}" data-tipo="FOLGA">F</div>
-              {% else %}
-                <div class="cell js-cell"
-                     style="background:transparent; color:#999; font-weight:600;"
-                     data-func="{{ func_id }}" data-dia="{{ d }}" data-tipo="">-</div>
-              {% endif %}
-            </td>
-          {% endfor %}
-        </tr>
       {% endfor %}
     </table>
   </div>
@@ -221,7 +235,6 @@
       const atual = (el.dataset.tipo || "").trim();
       const novo = NEXT[atual] || "EXPEDIENTE";
 
-      // feedback rápido
       el.style.opacity = "0.6";
 
       try{
