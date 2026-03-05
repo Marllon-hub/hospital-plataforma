@@ -494,7 +494,10 @@ def admin_escala_mes_pdf(escala_mes_id):
     c = canvas.Canvas(buffer, pagesize=landscape(A4))
     W, H = landscape(A4)
 
-    # paths logos (tenta png/jpg)
+    # ==========================
+    # LOGOS (corrigido para pegar .png/.jpg/.jpeg)
+    # Seus arquivos estão em: static/img/logo_hospital.jpeg e static/img/logo_prefeitura.png
+    # ==========================
     def _find_logo(*paths):
         for p in paths:
             if p and os.path.exists(p):
@@ -520,11 +523,31 @@ def admin_escala_mes_pdf(escala_mes_id):
     header_h = 60
     c.setLineWidth(1)
 
-    # logos
-    if logo_pref:
-        c.drawImage(ImageReader(logo_pref), margin, top - 50, 45, 45, preserveAspectRatio=True, mask='auto')
-    if logo_hosp:
-        c.drawImage(ImageReader(logo_hosp), W - margin - 45, top - 50, 45, 45, preserveAspectRatio=True, mask='auto')
+    # textos
+    setor_txt = (escala.setor or "TODOS").upper()
+
+    # logos (com try pra não quebrar se der algum erro de leitura)
+    try:
+        if logo_pref:
+            c.drawImage(
+                ImageReader(logo_pref),
+                margin, top - 50, 45, 45,
+                preserveAspectRatio=True,
+                mask="auto"
+            )
+    except Exception as e:
+        print("⚠️ Erro logo prefeitura:", e)
+
+    try:
+        if logo_hosp:
+            c.drawImage(
+                ImageReader(logo_hosp),
+                W - margin - 45, top - 50, 45, 45,
+                preserveAspectRatio=True,
+                mask="auto"
+            )
+    except Exception as e:
+        print("⚠️ Erro logo hospital:", e)
 
     c.setFont("Helvetica-Bold", 12)
     c.drawCentredString(W / 2, top - 18, "SECRETARIA MUNICIPAL DE SAÚDE DE CABO FRIO")
@@ -532,7 +555,6 @@ def admin_escala_mes_pdf(escala_mes_id):
     c.drawCentredString(W / 2, top - 36, "HOSPITAL MUNICIPAL DA MULHER")
 
     c.setFont("Helvetica", 10)
-    setor_txt = (escala.setor or "TODOS").upper()
     c.drawCentredString(W / 2, top - 52, f"ESCALA — {escala.mes:02d}/{escala.ano} — SETOR: {setor_txt}")
 
     y = top - header_h - 10
@@ -552,7 +574,7 @@ def admin_escala_mes_pdf(escala_mes_id):
     header_row_h = 18
 
     def draw_table_header(y0):
-        # linha header (FUNÇÃO/NOME/CH/VÍNCULO + dias)
+        # linha header (NOME/CH/VÍNCULO + dias)
         c.setFont("Helvetica-Bold", 8)
         c.setFillGray(0.95)
         c.rect(grid_x, y0 - header_row_h, grid_w, header_row_h, fill=1, stroke=1)
@@ -566,16 +588,11 @@ def admin_escala_mes_pdf(escala_mes_id):
         c.drawString(x + 4, y0 - 13, "VÍNCULO")
         x += col_vinc_w
 
-        # dias
         for d in dias:
             c.drawCentredString(x + cell_w / 2, y0 - 13, f"{d:02d}")
             x += cell_w
 
     def cell_label(tipo):
-        # ajuste conforme seu padrão:
-        # PLANTAO_24H -> "24H"
-        # EXPEDIENTE -> "X" (se quiser marcar)
-        # FOLGA -> "F"
         if tipo == "PLANTAO_24H":
             return "24H"
         if tipo == "EXPEDIENTE":
@@ -584,26 +601,39 @@ def admin_escala_mes_pdf(escala_mes_id):
             return "F"
         return ""
 
+    def draw_page_header():
+        top2 = H - margin
+
+        # logos
+        try:
+            if logo_pref:
+                c.drawImage(ImageReader(logo_pref), margin, top2 - 50, 45, 45,
+                            preserveAspectRatio=True, mask="auto")
+        except Exception as e:
+            print("⚠️ Erro logo prefeitura (nova pág):", e)
+
+        try:
+            if logo_hosp:
+                c.drawImage(ImageReader(logo_hosp), W - margin - 45, top2 - 50, 45, 45,
+                            preserveAspectRatio=True, mask="auto")
+        except Exception as e:
+            print("⚠️ Erro logo hospital (nova pág):", e)
+
+        c.setFont("Helvetica-Bold", 12)
+        c.drawCentredString(W / 2, top2 - 18, "SECRETARIA MUNICIPAL DE SAÚDE DE CABO FRIO")
+        c.setFont("Helvetica-Bold", 14)
+        c.drawCentredString(W / 2, top2 - 36, "HOSPITAL MUNICIPAL DA MULHER")
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(W / 2, top2 - 52, f"ESCALA — {escala.mes:02d}/{escala.ano} — SETOR: {setor_txt}")
+
+        return top2 - header_h - 10
+
     def ensure_page_space(next_rows=1):
         nonlocal y
         min_y = margin + 30
         if y - (next_rows * row_h) < min_y:
             c.showPage()
-            # redesenha cabeçalho em toda página
-            top2 = H - margin
-            if logo_pref:
-                c.drawImage(ImageReader(logo_pref), margin, top2 - 50, 45, 45, preserveAspectRatio=True, mask='auto')
-            if logo_hosp:
-                c.drawImage(ImageReader(logo_hosp), W - margin - 45, top2 - 50, 45, 45, preserveAspectRatio=True, mask='auto')
-
-            c.setFont("Helvetica-Bold", 12)
-            c.drawCentredString(W / 2, top2 - 18, "SECRETARIA MUNICIPAL DE SAÚDE DE CABO FRIO")
-            c.setFont("Helvetica-Bold", 14)
-            c.drawCentredString(W / 2, top2 - 36, "HOSPITAL MUNICIPAL DA MULHER")
-            c.setFont("Helvetica", 10)
-            c.drawCentredString(W / 2, top2 - 52, f"ESCALA — {escala.mes:02d}/{escala.ano} — SETOR: {setor_txt}")
-
-            y = top2 - header_h - 10
+            y = draw_page_header()
             draw_table_header(y)
             y -= header_row_h
 
@@ -658,7 +688,6 @@ def admin_escala_mes_pdf(escala_mes_id):
             c.setFont("Helvetica-Bold", 7)
 
             for d in dias:
-                # sombreamento leve em finais de semana (opcional)
                 dow = date(escala.ano, escala.mes, d).weekday()  # 5=sab, 6=dom
                 if dow >= 5:
                     c.setFillGray(0.96)
@@ -684,7 +713,6 @@ def admin_escala_mes_pdf(escala_mes_id):
 
     filename = f"escala_grade_{escala.ano}_{escala.mes:02d}_{(escala.setor or 'todos').replace(' ', '_')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype="application/pdf")
-
 # ==================================================
 # CURSOS FUNCIONÁRIO
 # ==================================================
