@@ -33,6 +33,8 @@ class Funcionario(db.Model):
     tipo_vinculo = db.Column(db.String(30))
     carga_horaria = db.Column(db.String(20))
 
+    equipe = db.Column(db.String(50))
+
     observacoes = db.Column(db.Text)
 
     # =========================
