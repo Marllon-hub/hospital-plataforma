@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Montar Equipes{% endblock %}
+
+{% block content %}
+<h1>👥 Montar Equipes — {{ "%02d"|format(escala.mes) }}/{{ escala.ano }}</h1>
+<p style="color:#666;">Setor: <strong>{{ escala.setor or "Todos" }}</strong></p>
+
+<div class="card" style="margin:12px 0; display:flex; gap:10px; flex-wrap:wrap;">
+  <a class="btn-outline" href="{{ url_for('admin_escala_mes', escala_mes_id=escala.id) }}">← Voltar para a escala</a>
+</div>
+
+<form method="POST" class="card" style="padding:14px;">
+  <table class="table" style="width:100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Funcionário</th>
+        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Setor</th>
+        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Cargo</th>
+        <th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Equipe</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in funcionarios %}
+      <tr>
+        <td style="padding:8px; border-bottom:1px solid #eee;">{{ f.nome }}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee;">{{ f.setor or "-" }}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee;">{{ f.cargo or "-" }}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee;">
+          <select name="equipe_{{ f.id }}" style="padding:6px; min-width:160px;">
+            {% for e in equipes %}
+              <option value="{{ e }}" {% if (f.equipe or "") == e %}selected{% endif %}>
+                {{ e if e else "SEM EQUIPE" }}
+              </option>
+            {% endfor %}
+          </select>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="margin-top:12px; display:flex; gap:10px;">
+    <button type="submit" class="btn-primary">Salvar Equipes</button>
+  </div>
+</form>
+{% endblock %}

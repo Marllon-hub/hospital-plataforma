@@ -344,6 +344,43 @@ def admin_excluir_escala(escala_mes_id):
 
     return redirect(url_for("admin_escalas"))
 
+#===================================================
+#MONTAR EQUIPES
+#===================================================
+@app.route("/admin/escalas/<int:escala_mes_id>/equipes", methods=["GET", "POST"])
+@login_required
+@direcao_required
+def admin_escalas_equipes(escala_mes_id):
+    escala = EscalaMes.query.get_or_404(escala_mes_id)
+
+    # pega funcionários que aparecem nessa escala
+    itens = EscalaItem.query.filter_by(escala_mes_id=escala.id).all()
+    func_ids = sorted(set(i.funcionario_id for i in itens))
+
+    funcionarios = (
+        Funcionario.query
+        .filter(Funcionario.id.in_(func_ids))
+        .order_by(Funcionario.nome)
+        .all()
+    )
+
+    EQUIPES_OPCOES = ["", "EQUIPE 1", "EQUIPE 2", "EQUIPE 3", "EQUIPE 4", "EQUIPE 5"]
+
+    if request.method == "POST":
+        for f in funcionarios:
+            equipe = (request.form.get(f"equipe_{f.id}") or "").strip()
+            f.equipe = equipe or None
+        db.session.commit()
+        flash("✅ Equipes atualizadas!", "success")
+        return redirect(url_for("admin_escala_mes", escala_mes_id=escala.id))
+
+    return render_template(
+        "admin/escalas_equipes.html",
+        escala=escala,
+        funcionarios=funcionarios,
+        equipes=EQUIPES_OPCOES
+    )
+
 # ==================================================
 # COMUNICADOS (FUNCIONÁRIO)
 # ==================================================
