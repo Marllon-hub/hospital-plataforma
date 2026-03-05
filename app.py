@@ -1392,43 +1392,6 @@ def generate_items_for_funcionario(func: Funcionario, escala_mes: EscalaMes, ano
 # ==================================================
 # ADMIN - ESCALAS
 # ==================================================
-
-@app.route("/admin/escalas")
-@login_required
-@direcao_required
-def admin_escalas():
-    escalas = EscalaMes.query.order_by(EscalaMes.ano.desc(), EscalaMes.mes.desc()).all()
-    hoje = datetime.now()
-    return render_template("admin/escalas.html", escalas=escalas, default_ano=hoje.year, default_mes=hoje.month)
-
-@app.route("/admin/escalas/gerar", methods=["POST"])
-@login_required
-@direcao_required
-def admin_escalas_gerar():
-    ano = int(request.form.get("ano"))
-    mes = int(request.form.get("mes"))
-
-    setor_raw = (request.form.get("setor") or "").strip()
-    setor = setor_raw or None
-
-    escala_mes = EscalaMes.query.filter_by(ano=ano, mes=mes, setor=setor).first()
-    if not escala_mes:
-        escala_mes = EscalaMes(ano=ano, mes=mes, setor=setor, criado_por_id=session.get("user_id"))
-        db.session.add(escala_mes)
-        db.session.commit()
-
-    q = Funcionario.query.filter_by(status="Ativo")
-    if setor:
-        q = q.filter(Funcionario.setor == setor)
-
-    funcionarios = q.order_by(Funcionario.nome).all()
-
-    for f in funcionarios:
-        generate_items_for_funcionario(f, escala_mes, ano, mes)
-
-    db.session.commit()
-    return redirect(url_for("admin_escala_mes", escala_mes_id=escala_mes.id))
-
 @app.route("/admin/escalas/<int:escala_mes_id>")
 @login_required
 @direcao_required
@@ -1460,7 +1423,44 @@ def admin_escala_mes(escala_mes_id):
     dias_no_mes = calendar.monthrange(escala.ano, escala.mes)[1]
     dias = list(range(1, dias_no_mes + 1))
 
-    return render_template("admin/escala_mes.html", escala=escala, por_func=por_func, func_map=func_map, dias=dias)
+    # ==================================================
+    # ✅ AGRUPAR FUNCIONÁRIOS POR EQUIPE (para exibir igual Excel)
+    # ==================================================
+    por_equipe = {}
+
+    for func_id in funcionarios_ids:
+        f = func_map.get(func_id)
+        equipe = (getattr(f, "equipe", None) or "SEM EQUIPE").strip().upper()
+        por_equipe.setdefault(equipe, []).append(func_id)
+
+    # ordena cada equipe por nome
+    for equipe in por_equipe:
+        por_equipe[equipe] = sorted(
+            por_equipe[equipe],
+            key=lambda fid: ((func_map.get(fid).nome or "") if func_map.get(fid) else "").upper()
+        )
+
+    # ordena equipes (EQUIPE 1..N, e SEM EQUIPE por último)
+    def ordem_equipe(nome):
+        n = (nome or "").upper().strip()
+        if n == "SEM EQUIPE":
+            return (999, n)
+        try:
+            num = int("".join(ch for ch in n if ch.isdigit()) or "0")
+            return (num, n)
+        except Exception:
+            return (500, n)
+
+    por_equipe_ordenado = dict(sorted(por_equipe.items(), key=lambda kv: ordem_equipe(kv[0])))
+
+    return render_template(
+        "admin/escala_mes.html",
+        escala=escala,
+        por_func=por_func,
+        func_map=func_map,
+        dias=dias,
+        por_equipe=por_equipe_ordenado
+    )
 
 # ==================================================
 # ✅ EDITAR DIA DA ESCALA (CÉLULA CLICÁVEL)
