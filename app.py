@@ -1388,6 +1388,75 @@ def generate_items_for_funcionario(func: Funcionario, escala_mes: EscalaMes, ano
         return
 
     return
+# ==================================================
+# ADMIN - ESCALAS (LISTA DE ESCALAS)
+# ==================================================
+@app.route("/admin/escalas")
+@login_required
+@direcao_required
+def admin_escalas():
+
+    escalas = EscalaMes.query.order_by(
+        EscalaMes.ano.desc(),
+        EscalaMes.mes.desc()
+    ).all()
+
+    hoje = datetime.now()
+
+    return render_template(
+        "admin/escalas.html",
+        escalas=escalas,
+        default_ano=hoje.year,
+        default_mes=hoje.month
+    )
+
+
+# ==================================================
+# ADMIN - GERAR NOVA ESCALA
+# ==================================================
+@app.route("/admin/escalas/gerar", methods=["POST"])
+@login_required
+@direcao_required
+def admin_escalas_gerar():
+
+    ano = int(request.form.get("ano"))
+    mes = int(request.form.get("mes"))
+
+    setor_raw = (request.form.get("setor") or "").strip()
+    setor = setor_raw or None
+
+    escala_mes = EscalaMes.query.filter_by(
+        ano=ano,
+        mes=mes,
+        setor=setor
+    ).first()
+
+    if not escala_mes:
+        escala_mes = EscalaMes(
+            ano=ano,
+            mes=mes,
+            setor=setor,
+            criado_por_id=session.get("user_id")
+        )
+
+        db.session.add(escala_mes)
+        db.session.commit()
+
+    q = Funcionario.query.filter_by(status="Ativo")
+
+    if setor:
+        q = q.filter(Funcionario.setor == setor)
+
+    funcionarios = q.order_by(Funcionario.nome).all()
+
+    for f in funcionarios:
+        generate_items_for_funcionario(f, escala_mes, ano, mes)
+
+    db.session.commit()
+
+    return redirect(
+        url_for("admin_escala_mes", escala_mes_id=escala_mes.id)
+    )
 
 # ==================================================
 # ADMIN - ESCALAS
