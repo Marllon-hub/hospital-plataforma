@@ -429,58 +429,262 @@ def admin_excluir_comunicado(comunicado_id):
 #===================================================
 #ESCALA PDF
 #===================================================
-
 @app.get("/admin/escalas/<int:escala_mes_id>/pdf")
-@direcao_required
 @login_required
+@direcao_required
 def admin_escala_mes_pdf(escala_mes_id):
     escala = EscalaMes.query.get_or_404(escala_mes_id)
-    itens = (EscalaItem.query
-             .filter_by(escala_mes_id=escala_mes_id)
-             .order_by(EscalaItem.inicio.asc())
-             .all())
 
-    buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=landscape(A4))
-    w, h = landscape(A4)
+    # pega itens
+    itens = (
+        EscalaItem.query
+        .filter_by(escala_mes_id=escala.id)
+        .order_by(EscalaItem.funcionario_id.asc(), EscalaItem.inicio.asc())
+        .all()
+    )
 
-    titulo = f"ESCALA {escala.mes:02d}/{escala.ano} - SETOR: {escala.setor or 'TODOS'}"
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(30, h - 40, titulo)
+    # mapa funcionario -> {dia: tipo}
+    por_func_dia = {}
+    func_ids = sorted(set(i.funcionario_id for i in itens))
 
-    # Cabeçalho
-    y = h - 70
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(30, y, "Funcionário")
-    c.drawString(320, y, "Início")
-    c.drawString(430, y, "Fim")
-    c.drawString(540, y, "Tipo")
-    y -= 18
-
-    c.setFont("Helvetica", 9)
-
-    def fmt(dt):
-        return dt.strftime("%d/%m/%Y %H:%M") if dt else "-"
+    funcionarios = (
+        Funcionario.query
+        .filter(Funcionario.id.in_(func_ids))
+        .order_by(Funcionario.nome)
+        .all()
+    )
+    func_map = {f.id: f for f in funcionarios}
 
     for it in itens:
-        nome = it.funcionario.nome if it.funcionario else f"ID {it.funcionario_id}"
-        c.drawString(30, y, (nome[:50] + "...") if len(nome) > 53 else nome)
-        c.drawString(320, y, fmt(it.inicio))
-        c.drawString(430, y, fmt(it.fim))
-        c.drawString(540, y, it.tipo or "-")
-        y -= 14
+        dia = int(it.inicio.strftime("%d"))
+        por_func_dia.setdefault(it.funcionario_id, {})[dia] = it.tipo
 
-        if y < 40:
+    # agrupa por equipe (igual você já faz no HTML)
+    por_equipe = {}
+    for fid in func_ids:
+        f = func_map.get(fid)
+        equipe = (getattr(f, "equipe", None) or "SEM EQUIPE").strip().upper()
+        por_equipe.setdefault(equipe, []).append(fid)
+
+    # ordena nomes dentro da equipe
+    for eq in por_equipe:
+        por_equipe[eq] = sorted(
+            por_equipe[eq],
+            key=lambda x: (func_map.get(x).nome or "").upper() if func_map.get(x) else ""
+        )
+
+    # ordena equipes (EQUIPE 1..N, SEM EQUIPE por último)
+    def ordem_equipe(nome):
+        n = (nome or "").upper().strip()
+        if n == "SEM EQUIPE":
+            return (999, n)
+        num = "".join(ch for ch in n if ch.isdigit())
+        return (int(num) if num else 500, n)
+
+    equipes_ordenadas = sorted(por_equipe.keys(), key=ordem_equipe)
+
+    # dias do mês
+    dias_no_mes = calendar.monthrange(escala.ano, escala.mes)[1]
+    dias = list(range(1, dias_no_mes + 1))
+
+    # ==========================
+    # PDF (modelo grade)
+    # ==========================
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=landscape(A4))
+    W, H = landscape(A4)
+
+    # paths logos (tenta png/jpg)
+    def _find_logo(*paths):
+        for p in paths:
+            if p and os.path.exists(p):
+                return p
+        return None
+
+    logo_pref = _find_logo(
+        os.path.join(BASE_DIR, "static", "img", "logo_prefeitura.png"),
+        os.path.join(BASE_DIR, "static", "img", "logo_prefeitura.jpg"),
+        os.path.join(BASE_DIR, "static", "img", "logo_prefeitura.jpeg"),
+    )
+    logo_hosp = _find_logo(
+        os.path.join(BASE_DIR, "static", "img", "logo_hospital.png"),
+        os.path.join(BASE_DIR, "static", "img", "logo_hospital.jpg"),
+        os.path.join(BASE_DIR, "static", "img", "logo_hospital.jpeg"),
+    )
+
+    # layout
+    margin = 20
+    top = H - margin
+
+    # --- Cabeçalho com logos e títulos ---
+    header_h = 60
+    c.setLineWidth(1)
+
+    # logos
+    if logo_pref:
+        c.drawImage(ImageReader(logo_pref), margin, top - 50, 45, 45, preserveAspectRatio=True, mask='auto')
+    if logo_hosp:
+        c.drawImage(ImageReader(logo_hosp), W - margin - 45, top - 50, 45, 45, preserveAspectRatio=True, mask='auto')
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawCentredString(W / 2, top - 18, "SECRETARIA MUNICIPAL DE SAÚDE DE CABO FRIO")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(W / 2, top - 36, "HOSPITAL MUNICIPAL DA MULHER")
+
+    c.setFont("Helvetica", 10)
+    setor_txt = (escala.setor or "TODOS").upper()
+    c.drawCentredString(W / 2, top - 52, f"ESCALA — {escala.mes:02d}/{escala.ano} — SETOR: {setor_txt}")
+
+    y = top - header_h - 10
+
+    # --- Tabela (grade) ---
+    # coluna nome + CH + vínculo (igual sua planilha)
+    col_nome_w = 220
+    col_ch_w = 45
+    col_vinc_w = 80
+    grid_x = margin
+    grid_w = W - margin * 2
+
+    # largura para dias
+    dias_area_w = grid_w - (col_nome_w + col_ch_w + col_vinc_w)
+    cell_w = max(12, dias_area_w / max(len(dias), 1))  # garante mínimo
+    row_h = 16
+    header_row_h = 18
+
+    def draw_table_header(y0):
+        # linha header (FUNÇÃO/NOME/CH/VÍNCULO + dias)
+        c.setFont("Helvetica-Bold", 8)
+        c.setFillGray(0.95)
+        c.rect(grid_x, y0 - header_row_h, grid_w, header_row_h, fill=1, stroke=1)
+        c.setFillGray(0)
+
+        x = grid_x
+        c.drawString(x + 4, y0 - 13, "NOME DO FUNCIONÁRIO(A)")
+        x += col_nome_w
+        c.drawString(x + 4, y0 - 13, "CH")
+        x += col_ch_w
+        c.drawString(x + 4, y0 - 13, "VÍNCULO")
+        x += col_vinc_w
+
+        # dias
+        for d in dias:
+            c.drawCentredString(x + cell_w / 2, y0 - 13, f"{d:02d}")
+            x += cell_w
+
+    def cell_label(tipo):
+        # ajuste conforme seu padrão:
+        # PLANTAO_24H -> "24H"
+        # EXPEDIENTE -> "X" (se quiser marcar)
+        # FOLGA -> "F"
+        if tipo == "PLANTAO_24H":
+            return "24H"
+        if tipo == "EXPEDIENTE":
+            return "X"
+        if tipo == "FOLGA":
+            return "F"
+        return ""
+
+    def ensure_page_space(next_rows=1):
+        nonlocal y
+        min_y = margin + 30
+        if y - (next_rows * row_h) < min_y:
             c.showPage()
-            y = h - 40
-            c.setFont("Helvetica", 9)
+            # redesenha cabeçalho em toda página
+            top2 = H - margin
+            if logo_pref:
+                c.drawImage(ImageReader(logo_pref), margin, top2 - 50, 45, 45, preserveAspectRatio=True, mask='auto')
+            if logo_hosp:
+                c.drawImage(ImageReader(logo_hosp), W - margin - 45, top2 - 50, 45, 45, preserveAspectRatio=True, mask='auto')
 
-    c.showPage()
+            c.setFont("Helvetica-Bold", 12)
+            c.drawCentredString(W / 2, top2 - 18, "SECRETARIA MUNICIPAL DE SAÚDE DE CABO FRIO")
+            c.setFont("Helvetica-Bold", 14)
+            c.drawCentredString(W / 2, top2 - 36, "HOSPITAL MUNICIPAL DA MULHER")
+            c.setFont("Helvetica", 10)
+            c.drawCentredString(W / 2, top2 - 52, f"ESCALA — {escala.mes:02d}/{escala.ano} — SETOR: {setor_txt}")
+
+            y = top2 - header_h - 10
+            draw_table_header(y)
+            y -= header_row_h
+
+    # desenha header tabela
+    draw_table_header(y)
+    y -= header_row_h
+
+    # --- Conteúdo por equipe ---
+    for equipe_nome in equipes_ordenadas:
+        ensure_page_space(next_rows=2)
+
+        # faixa da equipe (estilo planilha)
+        c.setFillGray(0.85)
+        c.rect(grid_x, y - row_h, grid_w, row_h, fill=1, stroke=1)
+        c.setFillGray(0)
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(grid_x + 6, y - 12, f"{equipe_nome} — SETOR: {setor_txt}")
+        y -= row_h
+
+        # linhas dos funcionários
+        for fid in por_equipe[equipe_nome]:
+            ensure_page_space(next_rows=1)
+
+            f = func_map.get(fid)
+            nome = (f.nome if f else "FUNCIONÁRIO").upper()
+            ch = (f.carga_horaria or "").upper() if f else ""
+            vinc = (f.tipo_vinculo or "").upper() if f else ""
+
+            # fundo branco
+            c.setFillGray(1)
+            c.rect(grid_x, y - row_h, grid_w, row_h, fill=1, stroke=1)
+            c.setFillGray(0)
+
+            # colunas fixas
+            c.setFont("Helvetica", 8)
+            x = grid_x
+
+            # nome
+            c.drawString(x + 4, y - 12, nome[:42])
+            x += col_nome_w
+
+            # CH
+            c.drawCentredString(x + col_ch_w / 2, y - 12, ch[:6])
+            x += col_ch_w
+
+            # vínculo
+            c.drawString(x + 4, y - 12, vinc[:12])
+            x += col_vinc_w
+
+            # dias
+            mapa_dias = por_func_dia.get(fid, {})
+            c.setFont("Helvetica-Bold", 7)
+
+            for d in dias:
+                # sombreamento leve em finais de semana (opcional)
+                dow = date(escala.ano, escala.mes, d).weekday()  # 5=sab, 6=dom
+                if dow >= 5:
+                    c.setFillGray(0.96)
+                    c.rect(x, y - row_h, cell_w, row_h, fill=1, stroke=1)
+                    c.setFillGray(0)
+                else:
+                    c.rect(x, y - row_h, cell_w, row_h, fill=0, stroke=1)
+
+                tipo = mapa_dias.get(d)
+                lab = cell_label(tipo)
+                if lab:
+                    c.drawCentredString(x + cell_w / 2, y - 12, lab)
+
+                x += cell_w
+
+            y -= row_h
+
+        # espaçador entre equipes
+        y -= 4
+
     c.save()
-
     buffer.seek(0)
-    filename = f"escala_{escala.ano}_{escala.mes:02d}_{(escala.setor or 'todos').replace(' ', '_')}.pdf"
+
+    filename = f"escala_grade_{escala.ano}_{escala.mes:02d}_{(escala.setor or 'todos').replace(' ', '_')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype="application/pdf")
+
 # ==================================================
 # CURSOS FUNCIONÁRIO
 # ==================================================
