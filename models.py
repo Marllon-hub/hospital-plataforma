@@ -26,14 +26,16 @@ class Funcionario(db.Model):
     setor = db.Column(db.String(80))
     cargo = db.Column(db.String(80))
 
+    # ✅ NOVO: equipe (para separar a escala igual ao Excel)
+    # Ex.: "EQUIPE 1", "EQUIPE 2", "EQUIPE 3"...
+    equipe = db.Column(db.String(50), nullable=True)
+
     data_admissao = db.Column(db.String(20))
     nascimento = db.Column(db.String(20))
 
     turno = db.Column(db.String(20))
     tipo_vinculo = db.Column(db.String(30))
     carga_horaria = db.Column(db.String(20))
-
-    equipe = db.Column(db.String(50))
 
     observacoes = db.Column(db.Text)
 
