@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, send_file, url_for
+from flask import Flask, render_template, request, redirect, session, send_file, url_for, flash
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, emit, join_room
 from functools import wraps
@@ -336,27 +336,37 @@ def comunicados():
 # ==================================================
 # ADMIN - EXCLUIR COMUNICADO
 # ==================================================
-from flask import redirect, url_for, request
-import os
-
 @app.route("/admin/comunicados/<int:comunicado_id>/excluir", methods=["POST"])
+@app.route("/admin/comunicados/<int:comunicado_id>/excluir/", methods=["POST"])
 @login_required
 @direcao_required
 def admin_excluir_comunicado(comunicado_id):
-    c = Mensagem.query.get_or_404(comunicado_id)
+    global comunicados_lista
+
+    # procura o comunicado na lista (memória)
+    idx = next((i for i, c in enumerate(comunicados_lista) if int(c.get("id", 0)) == comunicado_id), None)
+
+    if idx is None:
+        flash("❌ Comunicado não encontrado.", "danger")
+        return redirect(url_for("admin_comunicados"))
+
+    comunicado = comunicados_lista[idx]
 
     # se tiver PDF, tenta apagar o arquivo também
-    try:
-        if getattr(c, "pdf", None):
-            caminho = os.path.join(UPLOAD_COMUNICADOS, c.pdf)
+    pdf_nome = comunicado.get("pdf")
+    if pdf_nome:
+        try:
+            caminho = os.path.join(UPLOAD_COMUNICADOS, pdf_nome)
             if os.path.exists(caminho):
                 os.remove(caminho)
-    except Exception:
-        # se falhar, não impede excluir do banco
-        pass
+        except Exception:
+            # falhou apagar o arquivo, mas ainda apaga o comunicado da lista
+            pass
 
-    db.session.delete(c)
-    db.session.commit()
+    # remove da lista
+    comunicados_lista.pop(idx)
+
+    flash("✅ Comunicado excluído com sucesso!", "success")
     return redirect(url_for("admin_comunicados"))
 #===================================================
 #ESCALA PDF
